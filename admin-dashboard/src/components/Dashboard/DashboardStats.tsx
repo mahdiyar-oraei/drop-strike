@@ -74,7 +74,7 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, change, icon, color, 
 const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
   return (
     <Grid container spacing={3}>
-      <Grid item xs={12} sm={6} md={3}>
+      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
         <StatCard
           title="Total Users"
           value={stats.users.total}
@@ -85,7 +85,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
         />
       </Grid>
       
-      <Grid item xs={12} sm={6} md={3}>
+      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
         <StatCard
           title="Coins Distributed"
           value={`${(stats.coins.totalDistributed / 1000).toFixed(1)}K`}
@@ -95,7 +95,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
         />
       </Grid>
       
-      <Grid item xs={12} sm={6} md={3}>
+      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
         <StatCard
           title="Active Sessions"
           value={stats.gaming.activeSessions}
@@ -105,7 +105,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
         />
       </Grid>
       
-      <Grid item xs={12} sm={6} md={3}>
+      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
         <StatCard
           title="Pending Payouts"
           value={stats.payouts.pending}
@@ -116,14 +116,14 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
       </Grid>
 
       {/* Additional stats row */}
-      <Grid item xs={12}>
+      <Grid size={12}>
         <Card>
           <CardContent>
             <Typography variant="h6" gutterBottom>
               Today's Activity
             </Typography>
             <Grid container spacing={2}>
-              <Grid item xs={12} sm={4}>
+              <Grid size={{ xs: 12, sm: 4 }}>
                 <Box sx={{ textAlign: 'center', p: 2 }}>
                   <Typography variant="h4" color="primary.main" sx={{ fontWeight: 'bold' }}>
                     {stats.users.newToday}
@@ -133,7 +133,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
                   </Typography>
                 </Box>
               </Grid>
-              <Grid item xs={12} sm={4}>
+              <Grid size={{ xs: 12, sm: 4 }}>
                 <Box sx={{ textAlign: 'center', p: 2 }}>
                   <Typography variant="h4" color="warning.main" sx={{ fontWeight: 'bold' }}>
                     {(stats.coins.distributedToday / 1000).toFixed(1)}K
@@ -143,7 +143,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
                   </Typography>
                 </Box>
               </Grid>
-              <Grid item xs={12} sm={4}>
+              <Grid size={{ xs: 12, sm: 4 }}>
                 <Box sx={{ textAlign: 'center', p: 2 }}>
                   <Typography variant="h4" color="success.main" sx={{ fontWeight: 'bold' }}>
                     {stats.system.todayAdViews}
@@ -159,7 +159,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
       </Grid>
 
       {/* Top Countries */}
-      <Grid item xs={12} md={6}>
+      <Grid size={{ xs: 12, md: 6 }}>
         <Card sx={{ height: '100%' }}>
           <CardContent>
             <Typography variant="h6" gutterBottom>
@@ -190,7 +190,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
       </Grid>
 
       {/* Quick Actions */}
-      <Grid item xs={12} md={6}>
+      <Grid size={{ xs: 12, md: 6 }}>
         <Card sx={{ height: '100%' }}>
           <CardContent>
             <Typography variant="h6" gutterBottom>

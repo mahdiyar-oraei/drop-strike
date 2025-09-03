@@ -31,7 +31,7 @@ const Users: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [countryFilter, setCountryFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [selectedUsers, setSelectedUsers] = useState<GridRowSelectionModel>([]);
+  const [selectedUsers, setSelectedUsers] = useState<GridRowSelectionModel>([] as any);
   const [bulkActionDialog, setBulkActionDialog] = useState(false);
   const [bulkAction, setBulkAction] = useState('');
   const [coinAdjustment, setCoinAdjustment] = useState('');
@@ -63,7 +63,7 @@ const Users: React.FC = () => {
         setUsers(response.data.users);
         setPagination(prev => ({
           ...prev,
-          total: response.data.pagination.totalUsers,
+          total: response.data!.pagination.totalUsers,
         }));
       } else {
         setError('Failed to load users');
@@ -77,7 +77,7 @@ const Users: React.FC = () => {
   };
 
   const handleBulkAction = async () => {
-    if (!bulkAction || selectedUsers.length === 0) return;
+    if (!bulkAction || (Array.isArray(selectedUsers) && selectedUsers.length === 0)) return;
 
     try {
       const actionData: any = { reason: actionReason };
@@ -87,13 +87,13 @@ const Users: React.FC = () => {
 
       const response = await userApi.bulkUserAction(
         bulkAction,
-        selectedUsers as string[],
+        Array.isArray(selectedUsers) ? selectedUsers : [],
         actionData
       );
 
       if (response.success) {
         setBulkActionDialog(false);
-        setSelectedUsers([]);
+        setSelectedUsers([] as any);
         setBulkAction('');
         setCoinAdjustment('');
         setActionReason('');
@@ -225,7 +225,7 @@ const Users: React.FC = () => {
 
       <Paper sx={{ p: 3, mb: 3 }}>
         <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} md={4}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <TextField
               fullWidth
               placeholder="Search users..."
@@ -236,7 +236,7 @@ const Users: React.FC = () => {
               }}
             />
           </Grid>
-          <Grid item xs={12} md={2}>
+          <Grid size={{ xs: 12, md: 2 }}>
             <FormControl fullWidth>
               <InputLabel>Country</InputLabel>
               <Select
@@ -253,7 +253,7 @@ const Users: React.FC = () => {
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} md={2}>
+          <Grid size={{ xs: 12, md: 2 }}>
             <FormControl fullWidth>
               <InputLabel>Status</InputLabel>
               <Select
@@ -267,14 +267,14 @@ const Users: React.FC = () => {
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} md={4}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <Box sx={{ display: 'flex', gap: 1 }}>
               <Button
                 variant="outlined"
-                disabled={selectedUsers.length === 0}
+                disabled={Array.isArray(selectedUsers) && selectedUsers.length === 0}
                 onClick={() => setBulkActionDialog(true)}
               >
-                Bulk Actions ({selectedUsers.length})
+                Bulk Actions ({Array.isArray(selectedUsers) ? selectedUsers.length : 0})
               </Button>
               <Button
                 variant="contained"
