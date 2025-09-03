@@ -9,7 +9,11 @@
     "test": "jest",
     "seed:ads": "node scripts/seedAdRewards.js",
     "create:admin": "node scripts/createAdmin.js",
-    "setup": "npm run create:admin && npm run seed:ads"
+    "setup": "npm run create:admin && npm run seed:ads",
+    "install:all": "npm install && cd admin-dashboard && npm install && cd ..",
+    "dev:all": "concurrently \"npm run dev\" \"cd admin-dashboard && npm start\"",
+    "build:admin": "cd admin-dashboard && npm run build",
+    "admin": "cd admin-dashboard && npm start"
   },
   "keywords": ["unity", "game", "backend", "api", "admob", "paypal"],
   "author": "",
@@ -35,6 +39,7 @@
   "devDependencies": {
     "nodemon": "^3.0.2",
     "jest": "^29.7.0",
-    "supertest": "^6.3.3"
+    "supertest": "^6.3.3",
+    "concurrently": "^8.2.2"
   }
 }

@@ -4,15 +4,24 @@ A comprehensive backend API for the Drop Strike Unity game featuring user authen
 
 ## Features
 
+### Backend API
 - 🔐 **Authentication System** - User registration/login with JWT tokens
 - 🪙 **Coin System** - Earn coins through gameplay and ads with real money conversion
 - 📱 **AdMob Integration** - Reward system for different ad types (rewarded video, interstitial, banner)
 - 💰 **PayPal Payouts** - Automated payout system for users
 - 🏆 **Leaderboards** - Daily, weekly, monthly, and all-time rankings
 - ⏱️ **Engagement Tracking** - Track user play time and game statistics
-- 👨‍💼 **Admin Panel** - Comprehensive admin dashboard and management tools
 - 🌍 **Geo-location** - Automatic country detection from IP
 - 📊 **Analytics** - Detailed user and system analytics
+
+### Admin Dashboard
+- 🎨 **Modern UI** - Beautiful React-based interface with Material-UI
+- 📊 **Real-time Dashboard** - Live statistics and system monitoring
+- 👥 **User Management** - View, edit, and manage all game users
+- 💰 **Payout Processing** - Handle PayPal payout requests with approval workflow
+- 📱 **Ad Management** - Configure and monitor ad reward systems
+- 📈 **Advanced Analytics** - Detailed insights and reporting with charts
+- 📱 **Responsive Design** - Works on desktop, tablet, and mobile
 
 ## Tech Stack
 
@@ -36,13 +45,20 @@ A comprehensive backend API for the Drop Strike Unity game featuring user authen
 
 ### Installation
 
-1. **Clone and install dependencies**
+1. **Install backend dependencies**
 ```bash
 cd drop_strike
 npm install
 ```
 
-2. **Environment Configuration**
+2. **Install admin dashboard dependencies**
+```bash
+cd admin-dashboard
+npm install
+cd ..
+```
+
+3. **Environment Configuration**
 ```bash
 cp config.env.example .env
 ```
@@ -73,13 +89,30 @@ ADMOB_PUBLISHER_ID=your_admob_publisher_id
 BASE_COIN_TO_USD_RATE=0.001
 ```
 
-3. **Start the server**
+4. **Start the backend server**
 ```bash
 # Development
 npm run dev
 
 # Production
 npm start
+```
+
+5. **Start the admin dashboard** (in a new terminal)
+```bash
+cd admin-dashboard
+npm start
+```
+
+The admin dashboard will be available at `http://localhost:3001`
+
+### Quick Setup Script
+```bash
+# Install all dependencies and set up the project
+npm run install:all
+
+# Start both backend and admin dashboard
+npm run dev:all
 ```
 
 ## API Documentation
@@ -251,13 +284,22 @@ npm start
 ### Project Structure
 ```
 drop_strike/
-├── models/           # Database models
-├── routes/           # API route handlers
-├── middleware/       # Custom middleware
-├── utils/            # Utility functions
-├── logs/             # Application logs
-├── server.js         # Main server file
-└── package.json      # Dependencies
+├── admin-dashboard/     # React admin dashboard
+│   ├── src/
+│   │   ├── components/ # UI components
+│   │   ├── pages/     # Page components
+│   │   ├── contexts/  # React contexts
+│   │   ├── services/  # API services
+│   │   └── types/     # TypeScript types
+│   └── package.json
+├── models/             # Database models
+├── routes/             # API route handlers
+├── middleware/         # Custom middleware
+├── utils/              # Utility functions
+├── scripts/            # Setup scripts
+├── logs/               # Application logs
+├── server.js           # Main server file
+└── package.json        # Backend dependencies
 ```
 
 ### Database Indexes
@@ -273,18 +315,42 @@ Optimized indexes for:
 - Performance monitoring
 - Admin action audit trail
 
+## Admin Dashboard Access
+
+### Default Credentials
+- **URL**: http://localhost:3001
+- **Email**: admin@dropstrike.com
+- **Password**: admin123
+
+⚠️ **Important**: Change these credentials after first login!
+
+### Dashboard Features
+- **Real-time Statistics**: Monitor users, coins, sessions, and payouts
+- **User Management**: Search, filter, and manage all game users
+- **Bulk Operations**: Activate/deactivate users, adjust coin balances
+- **Payout Processing**: Review and approve PayPal payout requests
+- **Ad Configuration**: Set up and monitor different ad reward types
+- **Analytics**: Detailed charts and insights with multiple timeframes
+- **System Health**: Monitor API status and performance metrics
+
 ## Deployment
 
-### Environment Setup
+### Backend Deployment
 1. Set `NODE_ENV=production`
 2. Configure production database
 3. Set up PayPal live credentials
 4. Configure AdMob production settings
 5. Set secure JWT secret
 
+### Admin Dashboard Deployment
+1. Build the React app: `npm run build:admin`
+2. Serve static files from `admin-dashboard/build/`
+3. Configure environment variables for production API URL
+
 ### Recommended Infrastructure
-- **Server**: AWS EC2, DigitalOcean, or similar
+- **Backend**: AWS EC2, DigitalOcean, or similar
 - **Database**: MongoDB Atlas or self-hosted
+- **Frontend**: Netlify, Vercel, or static hosting
 - **CDN**: CloudFlare for static assets
 - **Monitoring**: New Relic, DataDog, or similar
 
