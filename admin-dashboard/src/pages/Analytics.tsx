@@ -377,7 +377,7 @@ const Analytics: React.FC = () => {
                   <div>
                     <Statistic
                       title="Avg Session Duration"
-                      value={Math.round(analyticsData?.sessions?.summary?.avgSessionDuration / 60 || 0)}
+                      value={Math.round((analyticsData?.sessions?.summary?.avgSessionDuration || 0) / 60)}
                       suffix="m"
                       valueStyle={{ fontSize: '18px', fontWeight: 'bold' }}
                     />
