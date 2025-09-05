@@ -75,6 +75,16 @@ export const adminApi = {
     });
     return response.data;
   },
+
+  getSystemConfig: async (): Promise<ApiResponse<any>> => {
+    const response: AxiosResponse<ApiResponse<any>> = await api.get('/admin/config');
+    return response.data;
+  },
+
+  updateSystemConfig: async (config: any): Promise<ApiResponse<any>> => {
+    const response: AxiosResponse<ApiResponse<any>> = await api.put('/admin/config', config);
+    return response.data;
+  },
 };
 
 export const userApi = {

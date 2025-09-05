@@ -7,6 +7,10 @@ import Layout from './components/Layout/Layout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Users from './pages/Users';
+import Payouts from './pages/Payouts';
+import Ads from './pages/Ads';
+import Analytics from './pages/Analytics';
+import Settings from './pages/Settings';
 
 // Create theme
 const theme = createTheme({
@@ -74,33 +78,7 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 // Placeholder components for other pages
-const Payouts: React.FC = () => (
-  <div>
-    <h1>Payouts Management</h1>
-    <p>Payout management functionality will be implemented here.</p>
-  </div>
-);
-
-const Ads: React.FC = () => (
-  <div>
-    <h1>Ad Rewards Management</h1>
-    <p>Ad rewards management functionality will be implemented here.</p>
-  </div>
-);
-
-const Analytics: React.FC = () => (
-  <div>
-    <h1>Analytics</h1>
-    <p>Analytics dashboard will be implemented here.</p>
-  </div>
-);
-
-const Settings: React.FC = () => (
-  <div>
-    <h1>Settings</h1>
-    <p>System settings will be implemented here.</p>
-  </div>
-);
+// All page components are now imported from their respective files
 
 function App() {
   return (

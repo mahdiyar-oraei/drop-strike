@@ -588,4 +588,268 @@ router.get('/health', authenticateToken, requireAdmin, async (req, res) => {
     }
 });
 
+// Bulk user actions
+router.post('/users/bulk-action', authenticateToken, requireAdmin, [
+    body('action')
+        .isIn(['activate', 'deactivate', 'adjust-coins'])
+        .withMessage('Invalid action'),
+    body('userIds')
+        .isArray({ min: 1 })
+        .withMessage('User IDs array is required'),
+    body('reason')
+        .optional()
+        .isLength({ max: 500 }),
+    body('coinAdjustment')
+        .optional()
+        .isInt({ min: -100000, max: 100000 })
+], async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({
+                success: false,
+                message: 'Validation errors',
+                errors: errors.array()
+            });
+        }
+
+        const { action, userIds, reason, coinAdjustment } = req.body;
+        
+        let updateResult;
+        let transactionPromises = [];
+
+        switch (action) {
+            case 'activate':
+                updateResult = await User.updateMany(
+                    { _id: { $in: userIds } },
+                    { $set: { isActive: true } }
+                );
+                break;
+
+            case 'deactivate':
+                updateResult = await User.updateMany(
+                    { _id: { $in: userIds } },
+                    { $set: { isActive: false } }
+                );
+                break;
+
+            case 'adjust-coins':
+                if (coinAdjustment === undefined) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Coin adjustment amount is required'
+                    });
+                }
+
+                const users = await User.find({ _id: { $in: userIds } });
+                
+                for (const user of users) {
+                    const newBalance = Math.max(0, user.coins + coinAdjustment);
+                    user.coins = newBalance;
+                    
+                    if (coinAdjustment > 0) {
+                        user.totalCoinsEarned += coinAdjustment;
+                    }
+                    
+                    await user.save();
+
+                    // Create transaction record
+                    transactionPromises.push(
+                        CoinTransaction.create({
+                            userId: user._id,
+                            amount: coinAdjustment,
+                            type: coinAdjustment > 0 ? 'bonus' : 'penalty',
+                            source: 'admin_bulk_adjustment',
+                            description: reason || `Bulk adjustment by admin ${req.user.email}`,
+                            balanceAfter: newBalance
+                        })
+                    );
+                }
+
+                await Promise.all(transactionPromises);
+                updateResult = { modifiedCount: users.length };
+                break;
+
+            default:
+                return res.status(400).json({
+                    success: false,
+                    message: 'Invalid action'
+                });
+        }
+
+        logger.info(`Bulk action '${action}' performed on ${updateResult.modifiedCount} users by admin ${req.user.email}`);
+
+        res.json({
+            success: true,
+            message: `Bulk action completed successfully`,
+            data: {
+                action,
+                affectedUsers: updateResult.modifiedCount,
+                reason
+            }
+        });
+
+    } catch (error) {
+        logger.error('Bulk user action error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error performing bulk action'
+        });
+    }
+});
+
+// Get system configuration
+router.get('/config', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        // Return current system configuration
+        const config = {
+            // Coin Configuration
+            baseCoinToUsdRate: parseFloat(process.env.BASE_COIN_TO_USD_RATE) || 0.001,
+            minimumPayoutAmount: parseFloat(process.env.MINIMUM_PAYOUT_AMOUNT) || 1.00,
+            maximumPayoutAmount: parseFloat(process.env.MAXIMUM_PAYOUT_AMOUNT) || 10000.00,
+            platformFeeRate: parseFloat(process.env.PLATFORM_FEE_RATE) || 0.05,
+
+            // System Configuration
+            maintenanceMode: process.env.MAINTENANCE_MODE === 'true',
+            registrationEnabled: process.env.REGISTRATION_ENABLED !== 'false',
+            payoutsEnabled: process.env.PAYOUTS_ENABLED !== 'false',
+            debugMode: process.env.DEBUG_MODE === 'true',
+
+            // Security Configuration
+            maxLoginAttempts: parseInt(process.env.MAX_LOGIN_ATTEMPTS) || 5,
+            sessionTimeout: parseInt(process.env.SESSION_TIMEOUT) || 86400,
+        };
+
+        res.json({
+            success: true,
+            data: config
+        });
+
+    } catch (error) {
+        logger.error('Get system config error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error fetching system configuration'
+        });
+    }
+});
+
+// Update system configuration
+router.put('/config', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        // Note: In a production environment, you would typically update environment variables
+        // or a configuration database/file. This is a simplified example.
+        
+        logger.info(`System configuration update attempted by admin ${req.user.email}`, req.body);
+
+        res.json({
+            success: true,
+            message: 'Configuration update logged. Manual deployment may be required for some changes.',
+            data: req.body
+        });
+
+    } catch (error) {
+        logger.error('Update system config error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error updating system configuration'
+        });
+    }
+});
+
+// Export data endpoint
+router.get('/export/:dataType', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const { dataType } = req.params;
+        const { startDate, endDate, limit = 1000 } = req.query;
+
+        let data = [];
+        const dateFilter = {};
+        
+        if (startDate) {
+            dateFilter.$gte = new Date(startDate);
+        }
+        if (endDate) {
+            dateFilter.$lte = new Date(endDate);
+        }
+
+        const filter = Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {};
+
+        switch (dataType) {
+            case 'users':
+                data = await User.find(filter)
+                    .select('-password')
+                    .limit(parseInt(limit))
+                    .sort({ createdAt: -1 });
+                break;
+
+            case 'payouts':
+                data = await Payout.find(filter)
+                    .populate('userId', 'name email country')
+                    .limit(parseInt(limit))
+                    .sort({ createdAt: -1 });
+                break;
+
+            case 'transactions':
+                data = await CoinTransaction.find(filter)
+                    .populate('userId', 'name email')
+                    .limit(parseInt(limit))
+                    .sort({ createdAt: -1 });
+                break;
+
+            case 'sessions':
+                data = await GameSession.find(filter)
+                    .populate('userId', 'name email')
+                    .limit(parseInt(limit))
+                    .sort({ startTime: -1 });
+                break;
+
+            case 'analytics':
+                // Export analytics summary
+                const [userCount, payoutCount, transactionCount] = await Promise.all([
+                    User.countDocuments(filter),
+                    Payout.countDocuments(filter),
+                    CoinTransaction.countDocuments(filter)
+                ]);
+
+                data = {
+                    summary: {
+                        users: userCount,
+                        payouts: payoutCount,
+                        transactions: transactionCount,
+                        exportDate: new Date().toISOString(),
+                        dateRange: { startDate, endDate }
+                    }
+                };
+                break;
+
+            default:
+                return res.status(400).json({
+                    success: false,
+                    message: 'Invalid data type for export'
+                });
+        }
+
+        logger.info(`Data export: ${dataType} by admin ${req.user.email}`);
+
+        res.json({
+            success: true,
+            data: data,
+            metadata: {
+                dataType,
+                count: Array.isArray(data) ? data.length : 1,
+                exportedAt: new Date().toISOString(),
+                exportedBy: req.user.email
+            }
+        });
+
+    } catch (error) {
+        logger.error('Export data error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error exporting data'
+        });
+    }
+});
+
 module.exports = router;

@@ -38,11 +38,13 @@ export interface Payout {
   paypalEmail: string;
   status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
   paypalTransactionId?: string;
-  requestedAt: string;
+  createdAt: string;
   processedAt?: string;
   completedAt?: string;
   failureReason?: string;
   netAmount: number;
+  conversionRate: number;
+  adminNotes?: string;
   fees: {
     paypalFee: number;
     platformFee: number;
@@ -56,14 +58,15 @@ export interface AdReward {
   adUnitName: string;
   coinReward: number;
   isActive: boolean;
-  description: string;
-  minimumWatchTime: number;
-  dailyLimit: number;
-  requirements: {
-    minLevel: number;
-    cooldownMinutes: number;
+  description?: string;
+  minimumWatchTime?: number;
+  dailyLimit?: number;
+  createdAt: string;
+  requirements?: {
+    minLevel?: number;
+    cooldownMinutes?: number;
   };
-  analytics: {
+  analytics?: {
     totalViews: number;
     totalRewardsGiven: number;
     totalCoinsDistributed: number;
