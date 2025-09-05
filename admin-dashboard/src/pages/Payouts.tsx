@@ -1,42 +1,40 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Container,
+  Layout,
   Typography,
-  Box,
-  Paper,
-  TextField,
+  Card,
+  Input,
   Button,
   Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Chip,
+  Tag,
   Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Grid,
-  Card,
-  CardContent,
-  IconButton,
+  Modal,
+  Row,
+  Col,
+  Space,
+  Table,
   Tooltip,
-  CircularProgress,
-} from '@mui/material';
-import { DataGrid, GridColDef } from '@mui/x-data-grid';
+  Spin,
+  Statistic,
+  message,
+} from 'antd';
 import {
-  Search as SearchIcon,
-  CheckCircle as ApproveIcon,
-  Cancel as RejectIcon,
-  Visibility as ViewIcon,
-  AttachMoney as MoneyIcon,
-  TrendingUp as TrendingUpIcon,
-  People as PeopleIcon,
-  Schedule as ScheduleIcon,
-} from '@mui/icons-material';
+  SearchOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  EyeOutlined,
+  DollarOutlined,
+  RiseOutlined,
+  UserOutlined,
+  ClockCircleOutlined,
+} from '@ant-design/icons';
 import { Payout } from '../types';
 import { payoutApi } from '../services/api';
 import { format } from 'date-fns';
+
+const { Content } = Layout;
+const { Title, Text } = Typography;
+const { Option } = Select;
 
 const Payouts: React.FC = () => {
   const [payouts, setPayouts] = useState<Payout[]>([]);
@@ -47,7 +45,7 @@ const Payouts: React.FC = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [selectedPayout, setSelectedPayout] = useState<Payout | null>(null);
-  const [actionDialog, setActionDialog] = useState<{
+  const [actionModal, setActionModal] = useState<{
     open: boolean;
     type: 'process' | 'reject' | null;
     payout: Payout | null;
@@ -56,20 +54,20 @@ const Payouts: React.FC = () => {
   const [adminNotes, setAdminNotes] = useState('');
   const [stats, setStats] = useState<any>(null);
   const [pagination, setPagination] = useState({
-    page: 0,
+    current: 1,
     pageSize: 25,
     total: 0,
   });
 
   useEffect(() => {
     loadPayouts();
-  }, [pagination.page, pagination.pageSize, searchTerm, statusFilter, startDate, endDate]);
+  }, [pagination.current, pagination.pageSize, searchTerm, statusFilter, startDate, endDate]);
 
   const loadPayouts = async () => {
     try {
       setLoading(true);
       const response = await payoutApi.getPayouts({
-        page: pagination.page + 1,
+        page: pagination.current,
         limit: pagination.pageSize,
         status: statusFilter || undefined,
         startDate: startDate || undefined,
@@ -95,45 +93,47 @@ const Payouts: React.FC = () => {
   };
 
   const handleProcessPayout = async () => {
-    if (!actionDialog.payout) return;
+    if (!actionModal.payout) return;
 
     try {
       const response = await payoutApi.processPayout(
-        actionDialog.payout._id,
+        actionModal.payout._id,
         adminNotes
       );
 
       if (response.success) {
-        setActionDialog({ open: false, type: null, payout: null });
+        message.success('Payout processed successfully');
+        setActionModal({ open: false, type: null, payout: null });
         setAdminNotes('');
         loadPayouts();
       } else {
-        setError('Failed to process payout');
+        message.error('Failed to process payout');
       }
     } catch (err) {
-      setError('An error occurred while processing payout');
+      message.error('An error occurred while processing payout');
       console.error('Process payout error:', err);
     }
   };
 
   const handleRejectPayout = async () => {
-    if (!actionDialog.payout || !actionReason) return;
+    if (!actionModal.payout || !actionReason) return;
 
     try {
       const response = await payoutApi.rejectPayout(
-        actionDialog.payout._id,
+        actionModal.payout._id,
         actionReason
       );
 
       if (response.success) {
-        setActionDialog({ open: false, type: null, payout: null });
+        message.success('Payout rejected successfully');
+        setActionModal({ open: false, type: null, payout: null });
         setActionReason('');
         loadPayouts();
       } else {
-        setError('Failed to reject payout');
+        message.error('Failed to reject payout');
       }
     } catch (err) {
-      setError('An error occurred while rejecting payout');
+      message.error('An error occurred while rejecting payout');
       console.error('Reject payout error:', err);
     }
   };
@@ -141,7 +141,7 @@ const Payouts: React.FC = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending': return 'warning';
-      case 'processing': return 'info';
+      case 'processing': return 'processing';
       case 'completed': return 'success';
       case 'failed': return 'error';
       case 'cancelled': return 'default';
@@ -149,274 +149,238 @@ const Payouts: React.FC = () => {
     }
   };
 
-  const columns: GridColDef[] = [
+  const columns = [
     {
-      field: 'user',
-      headerName: 'User',
+      title: 'User',
+      dataIndex: 'user',
+      key: 'user',
       width: 180,
-      renderCell: (params) => (
-        <Box>
-          <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-            {params.row.userId?.name || 'Unknown User'}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {params.row.userId?.email || 'No email'}
-          </Typography>
-        </Box>
+      render: (text: any, record: Payout) => (
+        <div>
+          <div style={{ fontWeight: 'bold' }}>{record.userId?.name || 'Unknown User'}</div>
+          <div style={{ fontSize: '12px', color: '#666' }}>{record.userId?.email || 'No email'}</div>
+        </div>
       ),
     },
     {
-      field: 'amount',
-      headerName: 'Amount',
+      title: 'Amount',
+      dataIndex: 'amount',
+      key: 'amount',
       width: 120,
-      renderCell: (params) => (
-        <Box sx={{ textAlign: 'right' }}>
-          <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-            ${params.value.toFixed(2)}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {params.row.coinsDeducted.toLocaleString()} coins
-          </Typography>
-        </Box>
+      render: (value: number, record: Payout) => (
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontWeight: 'bold' }}>${value.toFixed(2)}</div>
+          <div style={{ fontSize: '12px', color: '#666' }}>{record.coinsDeducted.toLocaleString()} coins</div>
+        </div>
       ),
     },
     {
-      field: 'netAmount',
-      headerName: 'Net Amount',
+      title: 'Net Amount',
+      dataIndex: 'netAmount',
+      key: 'netAmount',
       width: 120,
-      renderCell: (params) => (
-        <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'success.main' }}>
-          ${params.value.toFixed(2)}
-        </Typography>
+      render: (value: number) => (
+        <Text strong style={{ color: '#52c41a' }}>${value.toFixed(2)}</Text>
       ),
     },
     {
-      field: 'paypalEmail',
-      headerName: 'PayPal Email',
+      title: 'PayPal Email',
+      dataIndex: 'paypalEmail',
+      key: 'paypalEmail',
       width: 200,
-      renderCell: (params) => (
-        <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
-          {params.value}
-        </Typography>
+      render: (value: string) => (
+        <Text code>{value}</Text>
       ),
     },
     {
-      field: 'status',
-      headerName: 'Status',
+      title: 'Status',
+      dataIndex: 'status',
+      key: 'status',
       width: 120,
-      renderCell: (params) => (
-        <Chip
-          label={params.value.toUpperCase()}
-          color={getStatusColor(params.value) as any}
-          size="small"
-        />
+      render: (status: string) => (
+        <Tag color={getStatusColor(status)}>
+          {status.toUpperCase()}
+        </Tag>
       ),
     },
     {
-      field: 'createdAt',
-      headerName: 'Requested',
+      title: 'Requested',
+      dataIndex: 'createdAt',
+      key: 'createdAt',
       width: 130,
-      renderCell: (params) => (
-        <Typography variant="body2">
-          {format(new Date(params.value), 'MMM dd, yyyy')}
-        </Typography>
-      ),
+      render: (date: string) => format(new Date(date), 'MMM dd, yyyy'),
     },
     {
-      field: 'actions',
-      headerName: 'Actions',
+      title: 'Actions',
+      key: 'actions',
       width: 150,
-      sortable: false,
-      renderCell: (params) => (
-        <Box sx={{ display: 'flex', gap: 0.5 }}>
+      render: (record: Payout) => (
+        <Space>
           <Tooltip title="View Details">
-            <IconButton
-              size="small"
-              onClick={() => setSelectedPayout(params.row)}
-            >
-              <ViewIcon fontSize="small" />
-            </IconButton>
+            <Button
+              type="text"
+              icon={<EyeOutlined />}
+              onClick={() => setSelectedPayout(record)}
+            />
           </Tooltip>
-          {params.row.status === 'pending' && (
+          {record.status === 'pending' && (
             <>
               <Tooltip title="Process Payout">
-                <IconButton
-                  size="small"
-                  color="success"
-                  onClick={() => setActionDialog({
+                <Button
+                  type="text"
+                  icon={<CheckCircleOutlined />}
+                  style={{ color: '#52c41a' }}
+                  onClick={() => setActionModal({
                     open: true,
                     type: 'process',
-                    payout: params.row
+                    payout: record
                   })}
-                >
-                  <ApproveIcon fontSize="small" />
-                </IconButton>
+                />
               </Tooltip>
               <Tooltip title="Reject Payout">
-                <IconButton
-                  size="small"
-                  color="error"
-                  onClick={() => setActionDialog({
+                <Button
+                  type="text"
+                  icon={<CloseCircleOutlined />}
+                  style={{ color: '#ff4d4f' }}
+                  onClick={() => setActionModal({
                     open: true,
                     type: 'reject',
-                    payout: params.row
+                    payout: record
                   })}
-                >
-                  <RejectIcon fontSize="small" />
-                </IconButton>
+                />
               </Tooltip>
             </>
           )}
-        </Box>
+        </Space>
       ),
     },
   ];
 
   return (
-    <Container maxWidth="xl">
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
+    <Content style={{ padding: '24px' }}>
+      <div style={{ marginBottom: '24px' }}>
+        <Title level={2} style={{ marginBottom: '8px' }}>
           Payout Management
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
+        </Title>
+        <Text type="secondary">
           Review, process, and manage all payout requests from users.
-        </Typography>
-      </Box>
+        </Text>
+      </div>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
+        <Alert message={error} type="error" style={{ marginBottom: '16px' }} />
       )}
 
       {/* Stats Cards */}
       {stats && (
-        <Grid container spacing={3} sx={{ mb: 3 }}>
-          <Grid item xs={12} sm={6} md={3}>
+        <Row gutter={[16, 16]} style={{ marginBottom: '16px' }}>
+          <Col xs={24} sm={12} md={6}>
             <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <ScheduleIcon sx={{ color: 'warning.main', mr: 2 }} />
-                  <Box>
-                    <Typography variant="h6" component="div">
-                      {stats.pendingCount || 0}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Pending Payouts
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <ClockCircleOutlined style={{ color: '#faad14', marginRight: '8px', fontSize: '20px' }} />
+                <div>
+                  <Statistic
+                    title="Pending Payouts"
+                    value={stats.pendingCount || 0}
+                    valueStyle={{ fontSize: '18px', fontWeight: 'bold' }}
+                  />
+                </div>
+              </div>
             </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          </Col>
+          <Col xs={24} sm={12} md={6}>
             <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <MoneyIcon sx={{ color: 'success.main', mr: 2 }} />
-                  <Box>
-                    <Typography variant="h6" component="div">
-                      ${stats.totalAmount?.toFixed(2) || '0.00'}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Total Paid Out
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <DollarOutlined style={{ color: '#52c41a', marginRight: '8px', fontSize: '20px' }} />
+                <div>
+                  <Statistic
+                    title="Total Paid Out"
+                    value={stats.totalAmount || 0}
+                    prefix="$"
+                    precision={2}
+                    valueStyle={{ fontSize: '18px', fontWeight: 'bold' }}
+                  />
+                </div>
+              </div>
             </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          </Col>
+          <Col xs={24} sm={12} md={6}>
             <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <PeopleIcon sx={{ color: 'info.main', mr: 2 }} />
-                  <Box>
-                    <Typography variant="h6" component="div">
-                      {stats.uniqueUsers || 0}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Users Paid
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <UserOutlined style={{ color: '#13c2c2', marginRight: '8px', fontSize: '20px' }} />
+                <div>
+                  <Statistic
+                    title="Users Paid"
+                    value={stats.uniqueUsers || 0}
+                    valueStyle={{ fontSize: '18px', fontWeight: 'bold' }}
+                  />
+                </div>
+              </div>
             </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          </Col>
+          <Col xs={24} sm={12} md={6}>
             <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <TrendingUpIcon sx={{ color: 'primary.main', mr: 2 }} />
-                  <Box>
-                    <Typography variant="h6" component="div">
-                      {((stats.completedCount / (stats.totalCount || 1)) * 100).toFixed(1)}%
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Success Rate
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <RiseOutlined style={{ color: '#1890ff', marginRight: '8px', fontSize: '20px' }} />
+                <div>
+                  <Statistic
+                    title="Success Rate"
+                    value={((stats.completedCount / (stats.totalCount || 1)) * 100).toFixed(1)}
+                    suffix="%"
+                    valueStyle={{ fontSize: '18px', fontWeight: 'bold' }}
+                  />
+                </div>
+              </div>
             </Card>
-          </Grid>
-        </Grid>
+          </Col>
+        </Row>
       )}
 
       {/* Filters */}
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} md={3}>
-            <TextField
-              fullWidth
+      <Card style={{ marginBottom: '16px' }}>
+        <Row gutter={16} align="middle">
+          <Col xs={24} md={6}>
+            <Input
               placeholder="Search by user or email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              InputProps={{
-                startAdornment: <SearchIcon sx={{ color: 'text.secondary', mr: 1 }} />,
-              }}
+              prefix={<SearchOutlined />}
             />
-          </Grid>
-          <Grid item xs={12} md={2}>
-            <FormControl fullWidth>
-              <InputLabel>Status</InputLabel>
-              <Select
-                value={statusFilter}
-                label="Status"
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                <MenuItem value="">All Status</MenuItem>
-                <MenuItem value="pending">Pending</MenuItem>
-                <MenuItem value="processing">Processing</MenuItem>
-                <MenuItem value="completed">Completed</MenuItem>
-                <MenuItem value="failed">Failed</MenuItem>
-                <MenuItem value="cancelled">Cancelled</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} md={2}>
-            <TextField
-              fullWidth
-              label="Start Date"
+          </Col>
+          <Col xs={24} md={4}>
+            <Select
+              placeholder="Status"
+              value={statusFilter}
+              onChange={setStatusFilter}
+              style={{ width: '100%' }}
+              allowClear
+            >
+              <Option value="">All Status</Option>
+              <Option value="pending">Pending</Option>
+              <Option value="processing">Processing</Option>
+              <Option value="completed">Completed</Option>
+              <Option value="failed">Failed</Option>
+              <Option value="cancelled">Cancelled</Option>
+            </Select>
+          </Col>
+          <Col xs={24} md={4}>
+            <Input
               type="date"
+              placeholder="Start Date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              InputLabelProps={{ shrink: true }}
             />
-          </Grid>
-          <Grid item xs={12} md={2}>
-            <TextField
-              fullWidth
-              label="End Date"
+          </Col>
+          <Col xs={24} md={4}>
+            <Input
               type="date"
+              placeholder="End Date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              InputLabelProps={{ shrink: true }}
             />
-          </Grid>
-          <Grid item xs={12} md={3}>
+          </Col>
+          <Col xs={24} md={6}>
             <Button
-              variant="outlined"
               onClick={() => {
                 setSearchTerm('');
                 setStatusFilter('');
@@ -426,148 +390,145 @@ const Payouts: React.FC = () => {
             >
               Clear Filters
             </Button>
-          </Grid>
-        </Grid>
-      </Paper>
+          </Col>
+        </Row>
+      </Card>
 
       {/* Payouts Table */}
-      <Paper sx={{ height: 600 }}>
-        <DataGrid
-          rows={payouts}
+      <Card>
+        <Table
           columns={columns}
+          dataSource={payouts}
           loading={loading}
-          paginationMode="server"
-          rowCount={pagination.total}
-          paginationModel={{
-            page: pagination.page,
+          pagination={{
+            current: pagination.current,
             pageSize: pagination.pageSize,
-          }}
-          onPaginationModelChange={(model) => {
-            setPagination(prev => ({
-              ...prev,
-              page: model.page,
-              pageSize: model.pageSize,
-            }));
-          }}
-          pageSizeOptions={[10, 25, 50, 100]}
-          getRowId={(row) => row._id}
-          sx={{
-            '& .MuiDataGrid-row:hover': {
-              backgroundColor: 'action.hover',
+            total: pagination.total,
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
+            pageSizeOptions: ['10', '25', '50', '100'],
+            onChange: (page, pageSize) => {
+              setPagination(prev => ({
+                ...prev,
+                current: page,
+                pageSize: pageSize || prev.pageSize,
+              }));
             },
           }}
+          rowKey="_id"
+          scroll={{ x: 1000 }}
         />
-      </Paper>
+      </Card>
 
-      {/* Payout Details Dialog */}
-      <Dialog open={!!selectedPayout} onClose={() => setSelectedPayout(null)} maxWidth="md" fullWidth>
-        <DialogTitle>Payout Details</DialogTitle>
-        <DialogContent>
-          {selectedPayout && (
-            <Box sx={{ pt: 1 }}>
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
-                  <Typography variant="subtitle2" gutterBottom>User Information</Typography>
-                  <Typography variant="body2">Name: {selectedPayout.userId?.name}</Typography>
-                  <Typography variant="body2">Email: {selectedPayout.userId?.email}</Typography>
-                  <Typography variant="body2">Country: {selectedPayout.userId?.country}</Typography>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <Typography variant="subtitle2" gutterBottom>Payout Information</Typography>
-                  <Typography variant="body2">Amount: ${selectedPayout.amount.toFixed(2)}</Typography>
-                  <Typography variant="body2">Net Amount: ${selectedPayout.netAmount.toFixed(2)}</Typography>
-                  <Typography variant="body2">Coins Deducted: {selectedPayout.coinsDeducted.toLocaleString()}</Typography>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <Typography variant="subtitle2" gutterBottom>PayPal Information</Typography>
-                  <Typography variant="body2">Email: {selectedPayout.paypalEmail}</Typography>
-                  <Typography variant="body2">Conversion Rate: {selectedPayout.conversionRate}</Typography>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <Typography variant="subtitle2" gutterBottom>Fees</Typography>
-                  <Typography variant="body2">PayPal Fee: ${selectedPayout.fees?.paypalFee?.toFixed(2) || '0.00'}</Typography>
-                  <Typography variant="body2">Platform Fee: ${selectedPayout.fees?.platformFee?.toFixed(2) || '0.00'}</Typography>
-                </Grid>
-                <Grid item xs={12}>
-                  <Typography variant="subtitle2" gutterBottom>Status & Dates</Typography>
-                  <Typography variant="body2">Status: <Chip label={selectedPayout.status.toUpperCase()} color={getStatusColor(selectedPayout.status) as any} size="small" /></Typography>
-                  <Typography variant="body2">Requested: {format(new Date(selectedPayout.createdAt), 'PPpp')}</Typography>
-                  {selectedPayout.processedAt && (
-                    <Typography variant="body2">Processed: {format(new Date(selectedPayout.processedAt), 'PPpp')}</Typography>
-                  )}
-                </Grid>
-                {selectedPayout.adminNotes && (
-                  <Grid item xs={12}>
-                    <Typography variant="subtitle2" gutterBottom>Admin Notes</Typography>
-                    <Typography variant="body2">{selectedPayout.adminNotes}</Typography>
-                  </Grid>
+      {/* Payout Details Modal */}
+      <Modal
+        title="Payout Details"
+        open={!!selectedPayout}
+        onCancel={() => setSelectedPayout(null)}
+        footer={[
+          <Button key="close" onClick={() => setSelectedPayout(null)}>
+            Close
+          </Button>
+        ]}
+        width={800}
+      >
+        {selectedPayout && (
+          <div>
+            <Row gutter={16}>
+              <Col xs={24} md={12}>
+                <Title level={5}>User Information</Title>
+                <div style={{ marginBottom: '8px' }}>Name: {selectedPayout.userId?.name}</div>
+                <div style={{ marginBottom: '8px' }}>Email: {selectedPayout.userId?.email}</div>
+                <div style={{ marginBottom: '8px' }}>Country: {selectedPayout.userId?.country}</div>
+              </Col>
+              <Col xs={24} md={12}>
+                <Title level={5}>Payout Information</Title>
+                <div style={{ marginBottom: '8px' }}>Amount: ${selectedPayout.amount.toFixed(2)}</div>
+                <div style={{ marginBottom: '8px' }}>Net Amount: ${selectedPayout.netAmount.toFixed(2)}</div>
+                <div style={{ marginBottom: '8px' }}>Coins Deducted: {selectedPayout.coinsDeducted.toLocaleString()}</div>
+              </Col>
+              <Col xs={24} md={12}>
+                <Title level={5}>PayPal Information</Title>
+                <div style={{ marginBottom: '8px' }}>Email: {selectedPayout.paypalEmail}</div>
+                <div style={{ marginBottom: '8px' }}>Conversion Rate: {selectedPayout.conversionRate}</div>
+              </Col>
+              <Col xs={24} md={12}>
+                <Title level={5}>Fees</Title>
+                <div style={{ marginBottom: '8px' }}>PayPal Fee: ${selectedPayout.fees?.paypalFee?.toFixed(2) || '0.00'}</div>
+                <div style={{ marginBottom: '8px' }}>Platform Fee: ${selectedPayout.fees?.platformFee?.toFixed(2) || '0.00'}</div>
+              </Col>
+              <Col xs={24}>
+                <Title level={5}>Status & Dates</Title>
+                <div style={{ marginBottom: '8px' }}>
+                  Status: <Tag color={getStatusColor(selectedPayout.status)}>{selectedPayout.status.toUpperCase()}</Tag>
+                </div>
+                <div style={{ marginBottom: '8px' }}>Requested: {format(new Date(selectedPayout.createdAt), 'PPpp')}</div>
+                {selectedPayout.processedAt && (
+                  <div style={{ marginBottom: '8px' }}>Processed: {format(new Date(selectedPayout.processedAt), 'PPpp')}</div>
                 )}
-              </Grid>
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setSelectedPayout(null)}>Close</Button>
-        </DialogActions>
-      </Dialog>
+              </Col>
+              {selectedPayout.adminNotes && (
+                <Col xs={24}>
+                  <Title level={5}>Admin Notes</Title>
+                  <div>{selectedPayout.adminNotes}</div>
+                </Col>
+              )}
+            </Row>
+          </div>
+        )}
+      </Modal>
 
-      {/* Action Dialog */}
-      <Dialog open={actionDialog.open} onClose={() => setActionDialog({ open: false, type: null, payout: null })} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {actionDialog.type === 'process' ? 'Process Payout' : 'Reject Payout'}
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ pt: 1 }}>
-            {actionDialog.payout && (
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="body2" color="text.secondary">
-                  User: {actionDialog.payout.userId?.name} ({actionDialog.payout.userId?.email})
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Amount: ${actionDialog.payout.amount.toFixed(2)} (Net: ${actionDialog.payout.netAmount.toFixed(2)})
-                </Typography>
-              </Box>
-            )}
-            
-            {actionDialog.type === 'process' ? (
-              <TextField
-                fullWidth
-                label="Admin Notes (Optional)"
-                multiline
-                rows={3}
-                value={adminNotes}
-                onChange={(e) => setAdminNotes(e.target.value)}
-                placeholder="Add any processing notes..."
-              />
-            ) : (
-              <TextField
-                fullWidth
-                label="Rejection Reason"
-                multiline
-                rows={3}
-                value={actionReason}
-                onChange={(e) => setActionReason(e.target.value)}
-                placeholder="Enter reason for rejecting this payout..."
-                required
-              />
-            )}
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setActionDialog({ open: false, type: null, payout: null })}>
+      {/* Action Modal */}
+      <Modal
+        title={actionModal.type === 'process' ? 'Process Payout' : 'Reject Payout'}
+        open={actionModal.open}
+        onCancel={() => setActionModal({ open: false, type: null, payout: null })}
+        footer={[
+          <Button key="cancel" onClick={() => setActionModal({ open: false, type: null, payout: null })}>
             Cancel
-          </Button>
+          </Button>,
           <Button
-            onClick={actionDialog.type === 'process' ? handleProcessPayout : handleRejectPayout}
-            variant="contained"
-            color={actionDialog.type === 'process' ? 'success' : 'error'}
-            disabled={actionDialog.type === 'reject' && !actionReason}
+            key="action"
+            type="primary"
+            danger={actionModal.type === 'reject'}
+            onClick={actionModal.type === 'process' ? handleProcessPayout : handleRejectPayout}
+            disabled={actionModal.type === 'reject' && !actionReason}
           >
-            {actionDialog.type === 'process' ? 'Process Payout' : 'Reject Payout'}
+            {actionModal.type === 'process' ? 'Process Payout' : 'Reject Payout'}
           </Button>
-        </DialogActions>
-      </Dialog>
-    </Container>
+        ]}
+        width={500}
+      >
+        {actionModal.payout && (
+          <div style={{ marginBottom: '16px' }}>
+            <div style={{ marginBottom: '8px' }}>
+              User: {actionModal.payout.userId?.name} ({actionModal.payout.userId?.email})
+            </div>
+            <div style={{ marginBottom: '8px' }}>
+              Amount: ${actionModal.payout.amount.toFixed(2)} (Net: ${actionModal.payout.netAmount.toFixed(2)})
+            </div>
+          </div>
+        )}
+        
+        {actionModal.type === 'process' ? (
+          <Input.TextArea
+            placeholder="Add any processing notes..."
+            rows={3}
+            value={adminNotes}
+            onChange={(e) => setAdminNotes(e.target.value)}
+          />
+        ) : (
+          <Input.TextArea
+            placeholder="Enter reason for rejecting this payout..."
+            rows={3}
+            value={actionReason}
+            onChange={(e) => setActionReason(e.target.value)}
+            required
+          />
+        )}
+      </Modal>
+    </Content>
   );
 };
 

@@ -1,42 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Container,
+  Layout,
   Typography,
-  Box,
-  Paper,
-  TextField,
-  Button,
-  Grid,
   Card,
-  CardContent,
-  CardActions,
+  Input,
+  Button,
+  Row,
+  Col,
   Alert,
   Switch,
-  FormControlLabel,
   Divider,
-  Chip,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
+  Tag,
+  Modal,
   List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
-} from '@mui/material';
+  Space,
+  message,
+} from 'antd';
 import {
-  Save as SaveIcon,
-  Refresh as RefreshIcon,
-  Security as SecurityIcon,
-  Payment as PaymentIcon,
-  Settings as SettingsIcon,
-  Health as HealthIcon,
-  Visibility as ViewIcon,
-  Delete as DeleteIcon,
-} from '@mui/icons-material';
+  SaveOutlined,
+  ReloadOutlined,
+  SecurityScanOutlined,
+  DollarOutlined,
+  SettingOutlined,
+  HeartOutlined,
+  EyeOutlined,
+  DeleteOutlined,
+} from '@ant-design/icons';
 import { adminApi } from '../services/api';
 import { format } from 'date-fns';
+
+const { Content } = Layout;
+const { Title, Text } = Typography;
 
 interface SystemHealth {
   status: string;
@@ -61,7 +55,7 @@ const Settings: React.FC = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [systemHealth, setSystemHealth] = useState<SystemHealth | null>(null);
-  const [logsDialog, setLogsDialog] = useState(false);
+  const [logsModal, setLogsModal] = useState(false);
   const [logs, setLogs] = useState<any[]>([]);
 
   // System Configuration State
@@ -134,11 +128,10 @@ const Settings: React.FC = () => {
       // This would save the configuration to the backend
       // const response = await adminApi.updateSystemConfig(section, config);
       // if (response.success) {
-        setSuccess(`${section} configuration saved successfully`);
-        setTimeout(() => setSuccess(''), 3000);
+        message.success(`${section} configuration saved successfully`);
       // }
     } catch (err) {
-      setError(`Failed to save ${section} configuration`);
+      message.error(`Failed to save ${section} configuration`);
     } finally {
       setLoading(false);
     }
@@ -189,438 +182,441 @@ const Settings: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="xl">
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
+    <Content style={{ padding: '24px' }}>
+      <div style={{ marginBottom: '24px' }}>
+        <Title level={2} style={{ marginBottom: '8px' }}>
           System Settings
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
+        </Title>
+        <Text type="secondary">
           Configure system parameters, monitor health, and manage application settings.
-        </Typography>
-      </Box>
+        </Text>
+      </div>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
+        <Alert message={error} type="error" style={{ marginBottom: '16px' }} />
       )}
 
       {success && (
-        <Alert severity="success" sx={{ mb: 2 }}>
-          {success}
-        </Alert>
+        <Alert message={success} type="success" style={{ marginBottom: '16px' }} />
       )}
 
-      <Grid container spacing={3}>
+      <Row gutter={[16, 16]}>
         {/* System Health */}
-        <Grid item xs={12} lg={4}>
+        <Col xs={24} lg={8}>
           <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <HealthIcon sx={{ color: 'primary.main', mr: 1 }} />
-                <Typography variant="h6">System Health</Typography>
-                <Box sx={{ ml: 'auto' }}>
-                  <IconButton onClick={loadSystemHealth} size="small">
-                    <RefreshIcon />
-                  </IconButton>
-                </Box>
-              </Box>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
+              <HeartOutlined style={{ color: '#1890ff', marginRight: '8px' }} />
+              <Title level={4} style={{ margin: 0 }}>System Health</Title>
+              <div style={{ marginLeft: 'auto' }}>
+                <Button
+                  type="text"
+                  icon={<ReloadOutlined />}
+                  onClick={loadSystemHealth}
+                  size="small"
+                />
+              </div>
+            </div>
 
-              {systemHealth ? (
-                <Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                    <Typography variant="body2">Status:</Typography>
-                    <Chip 
-                      label={systemHealth.status.toUpperCase()} 
-                      color={systemHealth.status === 'healthy' ? 'success' : 'error'}
-                      size="small"
-                    />
-                  </Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                    <Typography variant="body2">Uptime:</Typography>
-                    <Typography variant="body2">{formatUptime(systemHealth.uptime)}</Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                    <Typography variant="body2">Memory Used:</Typography>
-                    <Typography variant="body2">{formatBytes(systemHealth.memory.heapUsed)}</Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                    <Typography variant="body2">Database:</Typography>
-                    <Chip 
-                      label={systemHealth.database.toUpperCase()} 
-                      color={systemHealth.database === 'connected' ? 'success' : 'error'}
-                      size="small"
-                    />
-                  </Box>
+            {systemHealth ? (
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <Text>Status:</Text>
+                  <Tag color={systemHealth.status === 'healthy' ? 'success' : 'error'}>
+                    {systemHealth.status.toUpperCase()}
+                  </Tag>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <Text>Uptime:</Text>
+                  <Text>{formatUptime(systemHealth.uptime)}</Text>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <Text>Memory Used:</Text>
+                  <Text>{formatBytes(systemHealth.memory.heapUsed)}</Text>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <Text>Database:</Text>
+                  <Tag color={systemHealth.database === 'connected' ? 'success' : 'error'}>
+                    {systemHealth.database.toUpperCase()}
+                  </Tag>
+                </div>
 
-                  <Divider sx={{ my: 2 }} />
-                  
-                  <Typography variant="subtitle2" gutterBottom>Services</Typography>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                    <Typography variant="body2">PayPal:</Typography>
-                    <Chip 
-                      label={systemHealth.services.paypal ? 'ENABLED' : 'DISABLED'} 
-                      color={systemHealth.services.paypal ? 'success' : 'default'}
-                      size="small"
-                    />
-                  </Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                    <Typography variant="body2">AdMob:</Typography>
-                    <Chip 
-                      label={systemHealth.services.admob ? 'ENABLED' : 'DISABLED'} 
-                      color={systemHealth.services.admob ? 'success' : 'default'}
-                      size="small"
-                    />
-                  </Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                    <Typography variant="body2">Email:</Typography>
-                    <Chip 
-                      label={systemHealth.services.email ? 'ENABLED' : 'DISABLED'} 
-                      color={systemHealth.services.email ? 'success' : 'default'}
-                      size="small"
-                    />
-                  </Box>
+                <Divider />
 
-                  <Button
-                    fullWidth
-                    variant="outlined"
-                    startIcon={<ViewIcon />}
-                    onClick={() => {
-                      loadSystemLogs();
-                      setLogsDialog(true);
-                    }}
-                    sx={{ mt: 2 }}
-                  >
-                    View System Logs
-                  </Button>
-                </Box>
-              ) : (
-                <Typography variant="body2" color="text.secondary">
-                  Loading system health...
-                </Typography>
-              )}
-            </CardContent>
+                <Title level={5} style={{ marginBottom: '8px' }}>Services</Title>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <Text>PayPal:</Text>
+                  <Tag color={systemHealth.services.paypal ? 'success' : 'default'}>
+                    {systemHealth.services.paypal ? 'ENABLED' : 'DISABLED'}
+                  </Tag>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <Text>AdMob:</Text>
+                  <Tag color={systemHealth.services.admob ? 'success' : 'default'}>
+                    {systemHealth.services.admob ? 'ENABLED' : 'DISABLED'}
+                  </Tag>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <Text>Email:</Text>
+                  <Tag color={systemHealth.services.email ? 'success' : 'default'}>
+                    {systemHealth.services.email ? 'ENABLED' : 'DISABLED'}
+                  </Tag>
+                </div>
+
+                <Button
+                  block
+                  icon={<EyeOutlined />}
+                  onClick={() => {
+                    loadSystemLogs();
+                    setLogsModal(true);
+                  }}
+                  style={{ marginTop: '16px' }}
+                >
+                  View System Logs
+                </Button>
+              </div>
+            ) : (
+              <Text type="secondary">Loading system health...</Text>
+            )}
           </Card>
-        </Grid>
+        </Col>
 
         {/* Coin & Payout Configuration */}
-        <Grid item xs={12} lg={8}>
+        <Col xs={24} lg={16}>
           <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                <PaymentIcon sx={{ color: 'primary.main', mr: 1 }} />
-                <Typography variant="h6">Coin & Payout Configuration</Typography>
-              </Box>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
+              <DollarOutlined style={{ color: '#1890ff', marginRight: '8px' }} />
+              <Title level={4} style={{ margin: 0 }}>Coin & Payout Configuration</Title>
+            </div>
 
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Base Coin to USD Rate"
+            <Row gutter={16}>
+              <Col xs={24} md={12}>
+                <div style={{ marginBottom: '16px' }}>
+                  <Text strong>Base Coin to USD Rate</Text>
+                  <Input
                     type="number"
                     value={config.baseCoinToUsdRate}
                     onChange={(e) => setConfig({ ...config, baseCoinToUsdRate: parseFloat(e.target.value) })}
-                    inputProps={{ step: 0.0001, min: 0.0001 }}
-                    helperText="How many USD per coin (e.g., 0.001 = 1000 coins = $1)"
+                    step={0.0001}
+                    min={0.0001}
+                    style={{ marginTop: '4px' }}
                   />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Platform Fee Rate"
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    How many USD per coin (e.g., 0.001 = 1000 coins = $1)
+                  </Text>
+                </div>
+              </Col>
+              <Col xs={24} md={12}>
+                <div style={{ marginBottom: '16px' }}>
+                  <Text strong>Platform Fee Rate</Text>
+                  <Input
                     type="number"
                     value={config.platformFeeRate}
                     onChange={(e) => setConfig({ ...config, platformFeeRate: parseFloat(e.target.value) })}
-                    inputProps={{ step: 0.01, min: 0, max: 1 }}
-                    helperText="Platform fee as decimal (e.g., 0.05 = 5%)"
+                    step={0.01}
+                    min={0}
+                    max={1}
+                    style={{ marginTop: '4px' }}
                   />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Minimum Payout Amount ($)"
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    Platform fee as decimal (e.g., 0.05 = 5%)
+                  </Text>
+                </div>
+              </Col>
+              <Col xs={24} md={12}>
+                <div style={{ marginBottom: '16px' }}>
+                  <Text strong>Minimum Payout Amount ($)</Text>
+                  <Input
                     type="number"
                     value={config.minimumPayoutAmount}
                     onChange={(e) => setConfig({ ...config, minimumPayoutAmount: parseFloat(e.target.value) })}
-                    inputProps={{ step: 0.01, min: 0.01 }}
+                    step={0.01}
+                    min={0.01}
+                    style={{ marginTop: '4px' }}
                   />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Maximum Payout Amount ($)"
+                </div>
+              </Col>
+              <Col xs={24} md={12}>
+                <div style={{ marginBottom: '16px' }}>
+                  <Text strong>Maximum Payout Amount ($)</Text>
+                  <Input
                     type="number"
                     value={config.maximumPayoutAmount}
                     onChange={(e) => setConfig({ ...config, maximumPayoutAmount: parseFloat(e.target.value) })}
-                    inputProps={{ step: 0.01, min: 1 }}
+                    step={0.01}
+                    min={1}
+                    style={{ marginTop: '4px' }}
                   />
-                </Grid>
-              </Grid>
-            </CardContent>
-            <CardActions>
+                </div>
+              </Col>
+            </Row>
+
+            <div style={{ textAlign: 'right', paddingTop: '16px' }}>
               <Button
-                startIcon={<SaveIcon />}
-                variant="contained"
+                type="primary"
+                icon={<SaveOutlined />}
                 onClick={() => handleSaveConfig('Coin & Payout')}
-                disabled={loading}
+                loading={loading}
               >
                 Save Configuration
               </Button>
-            </CardActions>
+            </div>
           </Card>
-        </Grid>
+        </Col>
 
         {/* Ad Configuration */}
-        <Grid item xs={12} md={6}>
+        <Col xs={24} md={12}>
           <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                <SettingsIcon sx={{ color: 'primary.main', mr: 1 }} />
-                <Typography variant="h6">Ad Configuration</Typography>
-              </Box>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
+              <SettingOutlined style={{ color: '#1890ff', marginRight: '8px' }} />
+              <Title level={4} style={{ margin: 0 }}>Ad Configuration</Title>
+            </div>
 
-              <Grid container spacing={2}>
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Default Ad Cooldown (minutes)"
+            <Row gutter={16}>
+              <Col xs={24}>
+                <div style={{ marginBottom: '16px' }}>
+                  <Text strong>Default Ad Cooldown (minutes)</Text>
+                  <Input
                     type="number"
                     value={config.defaultAdCooldown}
                     onChange={(e) => setConfig({ ...config, defaultAdCooldown: parseInt(e.target.value) })}
-                    inputProps={{ min: 0 }}
+                    min={0}
+                    style={{ marginTop: '4px' }}
                   />
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Max Daily Ad Views"
+                </div>
+              </Col>
+              <Col xs={24}>
+                <div style={{ marginBottom: '16px' }}>
+                  <Text strong>Max Daily Ad Views</Text>
+                  <Input
                     type="number"
                     value={config.maxDailyAdViews}
                     onChange={(e) => setConfig({ ...config, maxDailyAdViews: parseInt(e.target.value) })}
-                    inputProps={{ min: 1 }}
+                    min={1}
+                    style={{ marginTop: '4px' }}
                   />
-                </Grid>
-                <Grid item xs={12} md={4}>
-                  <TextField
-                    fullWidth
-                    label="Rewarded Video Coins"
+                </div>
+              </Col>
+              <Col xs={24} md={8}>
+                <div style={{ marginBottom: '16px' }}>
+                  <Text strong>Rewarded Video Coins</Text>
+                  <Input
                     type="number"
                     value={config.rewardedVideoCoins}
                     onChange={(e) => setConfig({ ...config, rewardedVideoCoins: parseInt(e.target.value) })}
-                    inputProps={{ min: 1 }}
+                    min={1}
+                    style={{ marginTop: '4px' }}
                   />
-                </Grid>
-                <Grid item xs={12} md={4}>
-                  <TextField
-                    fullWidth
-                    label="Interstitial Ad Coins"
+                </div>
+              </Col>
+              <Col xs={24} md={8}>
+                <div style={{ marginBottom: '16px' }}>
+                  <Text strong>Interstitial Ad Coins</Text>
+                  <Input
                     type="number"
                     value={config.interstitialAdCoins}
                     onChange={(e) => setConfig({ ...config, interstitialAdCoins: parseInt(e.target.value) })}
-                    inputProps={{ min: 1 }}
+                    min={1}
+                    style={{ marginTop: '4px' }}
                   />
-                </Grid>
-                <Grid item xs={12} md={4}>
-                  <TextField
-                    fullWidth
-                    label="Banner Ad Coins"
+                </div>
+              </Col>
+              <Col xs={24} md={8}>
+                <div style={{ marginBottom: '16px' }}>
+                  <Text strong>Banner Ad Coins</Text>
+                  <Input
                     type="number"
                     value={config.bannerAdCoins}
                     onChange={(e) => setConfig({ ...config, bannerAdCoins: parseInt(e.target.value) })}
-                    inputProps={{ min: 1 }}
+                    min={1}
+                    style={{ marginTop: '4px' }}
                   />
-                </Grid>
-              </Grid>
-            </CardContent>
-            <CardActions>
+                </div>
+              </Col>
+            </Row>
+
+            <div style={{ textAlign: 'right', paddingTop: '16px' }}>
               <Button
-                startIcon={<SaveIcon />}
-                variant="contained"
+                type="primary"
+                icon={<SaveOutlined />}
                 onClick={() => handleSaveConfig('Ad')}
-                disabled={loading}
+                loading={loading}
               >
                 Save Configuration
               </Button>
-            </CardActions>
+            </div>
           </Card>
-        </Grid>
+        </Col>
 
         {/* Security Configuration */}
-        <Grid item xs={12} md={6}>
+        <Col xs={24} md={12}>
           <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                <SecurityIcon sx={{ color: 'primary.main', mr: 1 }} />
-                <Typography variant="h6">Security Configuration</Typography>
-              </Box>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
+              <SecurityScanOutlined style={{ color: '#1890ff', marginRight: '8px' }} />
+              <Title level={4} style={{ margin: 0 }}>Security Configuration</Title>
+            </div>
 
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Max Login Attempts"
+            <Row gutter={16}>
+              <Col xs={24} md={12}>
+                <div style={{ marginBottom: '16px' }}>
+                  <Text strong>Max Login Attempts</Text>
+                  <Input
                     type="number"
                     value={config.maxLoginAttempts}
                     onChange={(e) => setConfig({ ...config, maxLoginAttempts: parseInt(e.target.value) })}
-                    inputProps={{ min: 1 }}
+                    min={1}
+                    style={{ marginTop: '4px' }}
                   />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Session Timeout (seconds)"
+                </div>
+              </Col>
+              <Col xs={24} md={12}>
+                <div style={{ marginBottom: '16px' }}>
+                  <Text strong>Session Timeout (seconds)</Text>
+                  <Input
                     type="number"
                     value={config.sessionTimeout}
                     onChange={(e) => setConfig({ ...config, sessionTimeout: parseInt(e.target.value) })}
-                    inputProps={{ min: 300 }}
+                    min={300}
+                    style={{ marginTop: '4px' }}
                   />
-                </Grid>
-                <Grid item xs={12}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={config.requireEmailVerification}
-                        onChange={(e) => setConfig({ ...config, requireEmailVerification: e.target.checked })}
-                      />
-                    }
-                    label="Require Email Verification"
+                </div>
+              </Col>
+              <Col xs={24}>
+                <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Text>Require Email Verification</Text>
+                  <Switch
+                    checked={config.requireEmailVerification}
+                    onChange={(checked) => setConfig({ ...config, requireEmailVerification: checked })}
                   />
-                </Grid>
-                <Grid item xs={12}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={config.enableTwoFactor}
-                        onChange={(e) => setConfig({ ...config, enableTwoFactor: e.target.checked })}
-                      />
-                    }
-                    label="Enable Two-Factor Authentication"
+                </div>
+              </Col>
+              <Col xs={24}>
+                <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Text>Enable Two-Factor Authentication</Text>
+                  <Switch
+                    checked={config.enableTwoFactor}
+                    onChange={(checked) => setConfig({ ...config, enableTwoFactor: checked })}
                   />
-                </Grid>
-              </Grid>
-            </CardContent>
-            <CardActions>
+                </div>
+              </Col>
+            </Row>
+
+            <div style={{ textAlign: 'right', paddingTop: '16px' }}>
               <Button
-                startIcon={<SaveIcon />}
-                variant="contained"
+                type="primary"
+                icon={<SaveOutlined />}
                 onClick={() => handleSaveConfig('Security')}
-                disabled={loading}
+                loading={loading}
               >
                 Save Configuration
               </Button>
-            </CardActions>
+            </div>
           </Card>
-        </Grid>
+        </Col>
 
         {/* System Toggles */}
-        <Grid item xs={12}>
+        <Col xs={24}>
           <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                System Toggles
-              </Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={3}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={config.maintenanceMode}
-                        onChange={(e) => setConfig({ ...config, maintenanceMode: e.target.checked })}
-                        color="warning"
-                      />
-                    }
-                    label="Maintenance Mode"
+            <Title level={4} style={{ marginBottom: '16px' }}>
+              System Toggles
+            </Title>
+            <Row gutter={16}>
+              <Col xs={24} md={6}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                  <Text>Maintenance Mode</Text>
+                  <Switch
+                    checked={config.maintenanceMode}
+                    onChange={(checked) => setConfig({ ...config, maintenanceMode: checked })}
                   />
-                </Grid>
-                <Grid item xs={12} md={3}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={config.registrationEnabled}
-                        onChange={(e) => setConfig({ ...config, registrationEnabled: e.target.checked })}
-                      />
-                    }
-                    label="User Registration"
+                </div>
+              </Col>
+              <Col xs={24} md={6}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                  <Text>User Registration</Text>
+                  <Switch
+                    checked={config.registrationEnabled}
+                    onChange={(checked) => setConfig({ ...config, registrationEnabled: checked })}
                   />
-                </Grid>
-                <Grid item xs={12} md={3}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={config.payoutsEnabled}
-                        onChange={(e) => setConfig({ ...config, payoutsEnabled: e.target.checked })}
-                      />
-                    }
-                    label="Payouts Enabled"
+                </div>
+              </Col>
+              <Col xs={24} md={6}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                  <Text>Payouts Enabled</Text>
+                  <Switch
+                    checked={config.payoutsEnabled}
+                    onChange={(checked) => setConfig({ ...config, payoutsEnabled: checked })}
                   />
-                </Grid>
-                <Grid item xs={12} md={3}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={config.debugMode}
-                        onChange={(e) => setConfig({ ...config, debugMode: e.target.checked })}
-                        color="warning"
-                      />
-                    }
-                    label="Debug Mode"
+                </div>
+              </Col>
+              <Col xs={24} md={6}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                  <Text>Debug Mode</Text>
+                  <Switch
+                    checked={config.debugMode}
+                    onChange={(checked) => setConfig({ ...config, debugMode: checked })}
                   />
-                </Grid>
-              </Grid>
-            </CardContent>
-            <CardActions>
+                </div>
+              </Col>
+            </Row>
+
+            <div style={{ textAlign: 'right', paddingTop: '16px' }}>
               <Button
-                startIcon={<SaveIcon />}
-                variant="contained"
+                type="primary"
+                icon={<SaveOutlined />}
                 onClick={() => handleSaveConfig('System')}
-                disabled={loading}
+                loading={loading}
               >
                 Save Configuration
               </Button>
-            </CardActions>
+            </div>
           </Card>
-        </Grid>
-      </Grid>
+        </Col>
+      </Row>
 
-      {/* System Logs Dialog */}
-      <Dialog open={logsDialog} onClose={() => setLogsDialog(false)} maxWidth="md" fullWidth>
-        <DialogTitle>System Logs</DialogTitle>
-        <DialogContent>
-          <List>
-            {logs.map((log, index) => (
-              <ListItem key={index}>
-                <ListItemText
-                  primary={
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Chip 
-                        label={log.level.toUpperCase()} 
-                        color={getLogLevelColor(log.level) as any}
-                        size="small"
-                      />
-                      <Typography variant="body2">
-                        {log.message}
-                      </Typography>
-                    </Box>
-                  }
-                  secondary={format(new Date(log.timestamp), 'PPpp')}
-                />
-                <ListItemSecondaryAction>
-                  <IconButton edge="end" size="small">
-                    <DeleteIcon />
-                  </IconButton>
-                </ListItemSecondaryAction>
-              </ListItem>
-            ))}
-          </List>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setLogsDialog(false)}>Close</Button>
-          <Button variant="outlined" onClick={() => setLogs([])}>
+      {/* System Logs Modal */}
+      <Modal
+        title="System Logs"
+        open={logsModal}
+        onCancel={() => setLogsModal(false)}
+        footer={[
+          <Button key="close" onClick={() => setLogsModal(false)}>
+            Close
+          </Button>,
+          <Button key="clear" onClick={() => setLogs([])}>
             Clear Logs
           </Button>
-        </DialogActions>
-      </Dialog>
-    </Container>
+        ]}
+        width={800}
+      >
+        <List
+          dataSource={logs}
+          renderItem={(log, index) => (
+            <List.Item
+              key={index}
+              actions={[
+                <Button
+                  key="delete"
+                  type="text"
+                  icon={<DeleteOutlined />}
+                  size="small"
+                />
+              ]}
+            >
+              <List.Item.Meta
+                title={
+                  <Space>
+                    <Tag color={getLogLevelColor(log.level)}>
+                      {log.level.toUpperCase()}
+                    </Tag>
+                    <Text>{log.message}</Text>
+                  </Space>
+                }
+                description={format(new Date(log.timestamp), 'PPpp')}
+              />
+            </List.Item>
+          )}
+        />
+      </Modal>
+    </Content>
   );
 };
 

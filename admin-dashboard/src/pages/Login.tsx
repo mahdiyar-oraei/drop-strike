@@ -1,17 +1,20 @@
 import React, { useState } from 'react';
 import {
-  Container,
-  Paper,
-  TextField,
+  Layout,
+  Card,
+  Input,
   Button,
   Typography,
-  Box,
   Alert,
-  CircularProgress,
-} from '@mui/material';
-import { VideogameAsset as GameIcon } from '@mui/icons-material';
+  Spin,
+  Form,
+} from 'antd';
+import { PlayCircleOutlined } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+
+const { Content } = Layout;
+const { Title, Text } = Typography;
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -42,112 +45,124 @@ const Login: React.FC = () => {
   };
 
   return (
-    <Container
-      component="main"
-      maxWidth="sm"
-      sx={{
+    <Layout
+      style={{
         minHeight: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       }}
     >
-      <Paper
-        elevation={10}
-        sx={{
-          padding: 4,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          borderRadius: 3,
+      <Content
+        style={{
+          maxWidth: '400px',
           width: '100%',
+          padding: '24px',
         }}
       >
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            mb: 3,
-            color: 'primary.main',
+        <Card
+          style={{
+            borderRadius: '12px',
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)',
           }}
         >
-          <GameIcon sx={{ fontSize: 40, mr: 1 }} />
-          <Typography component="h1" variant="h4" sx={{ fontWeight: 'bold' }}>
-            Drop Strike
-          </Typography>
-        </Box>
-
-        <Typography component="h2" variant="h5" sx={{ mb: 3, color: 'text.secondary' }}>
-          Admin Dashboard
-        </Typography>
-
-        {error && (
-          <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-
-        <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%' }}>
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            id="email"
-            label="Email Address"
-            name="email"
-            autoComplete="email"
-            autoFocus
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            disabled={loading}
-          />
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            name="password"
-            label="Password"
-            type="password"
-            id="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            disabled={loading}
-          />
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            sx={{
-              mt: 3,
-              mb: 2,
-              py: 1.5,
-              fontSize: '1.1rem',
-              background: 'linear-gradient(45deg, #667eea 30%, #764ba2 90%)',
-              '&:hover': {
-                background: 'linear-gradient(45deg, #5a67d8 30%, #6b46c1 90%)',
-              },
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              textAlign: 'center',
             }}
-            disabled={loading}
           >
-            {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign In'}
-          </Button>
-        </Box>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                marginBottom: '24px',
+                color: '#1890ff',
+              }}
+            >
+              <PlayCircleOutlined style={{ fontSize: '40px', marginRight: '8px' }} />
+              <Title level={2} style={{ margin: 0, fontWeight: 'bold' }}>
+                Drop Strike
+              </Title>
+            </div>
 
-        <Box sx={{ mt: 2, textAlign: 'center' }}>
-          <Typography variant="body2" color="text.secondary">
-            Default Admin Credentials:
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Email: admin@dropstrike.com
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Password: admin123
-          </Typography>
-        </Box>
-      </Paper>
-    </Container>
+            <Title level={3} style={{ marginBottom: '24px', color: '#666' }}>
+              Admin Dashboard
+            </Title>
+
+            {error && (
+              <Alert message={error} type="error" style={{ width: '100%', marginBottom: '16px' }} />
+            )}
+
+            <Form
+              onFinish={handleSubmit}
+              style={{ width: '100%' }}
+              layout="vertical"
+            >
+              <Form.Item
+                label="Email Address"
+                name="email"
+                rules={[{ required: true, message: 'Please input your email!' }]}
+              >
+                <Input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={loading}
+                  size="large"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label="Password"
+                name="password"
+                rules={[{ required: true, message: 'Please input your password!' }]}
+              >
+                <Input.Password
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={loading}
+                  size="large"
+                />
+              </Form.Item>
+
+              <Form.Item>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  block
+                  size="large"
+                  loading={loading}
+                  style={{
+                    height: '48px',
+                    fontSize: '16px',
+                    background: 'linear-gradient(45deg, #667eea 30%, #764ba2 90%)',
+                    border: 'none',
+                  }}
+                >
+                  Sign In
+                </Button>
+              </Form.Item>
+            </Form>
+
+            <div style={{ marginTop: '16px', textAlign: 'center' }}>
+              <Text type="secondary" style={{ display: 'block', marginBottom: '4px' }}>
+                Default Admin Credentials:
+              </Text>
+              <Text type="secondary" style={{ display: 'block', marginBottom: '4px' }}>
+                Email: admin@dropstrike.com
+              </Text>
+              <Text type="secondary" style={{ display: 'block' }}>
+                Password: admin123
+              </Text>
+            </div>
+          </div>
+        </Card>
+      </Content>
+    </Layout>
   );
 };
 

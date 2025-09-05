@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Container,
+  Layout,
   Typography,
-  Box,
   Alert,
-  CircularProgress,
-} from '@mui/material';
+  Spin,
+} from 'antd';
 import DashboardStats from '../components/Dashboard/DashboardStats';
 import { adminApi } from '../services/api';
 import { DashboardStats as Stats } from '../types';
+
+const { Content } = Layout;
+const { Title, Text } = Typography;
 
 const Dashboard: React.FC = () => {
   const [stats, setStats] = useState<Stats | null>(null);
@@ -39,44 +41,42 @@ const Dashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <Container>
-        <Box
-          sx={{
+      <Content style={{ padding: '24px' }}>
+        <div
+          style={{
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
             minHeight: '400px',
           }}
         >
-          <CircularProgress size={60} />
-        </Box>
-      </Container>
+          <Spin size="large" />
+        </div>
+      </Content>
     );
   }
 
   if (error) {
     return (
-      <Container>
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      </Container>
+      <Content style={{ padding: '24px' }}>
+        <Alert message={error} type="error" style={{ marginBottom: '16px' }} />
+      </Content>
     );
   }
 
   return (
-    <Container maxWidth="xl">
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
+    <Content style={{ padding: '24px' }}>
+      <div style={{ marginBottom: '24px' }}>
+        <Title level={2} style={{ marginBottom: '8px' }}>
           Dashboard Overview
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
+        </Title>
+        <Text type="secondary">
           Welcome to the Drop Strike admin dashboard. Monitor your game's performance and manage users.
-        </Typography>
-      </Box>
+        </Text>
+      </div>
 
       {stats && <DashboardStats stats={stats} />}
-    </Container>
+    </Content>
   );
 };
 

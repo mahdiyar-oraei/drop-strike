@@ -1,54 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Container,
+  Layout,
   Typography,
-  Box,
-  Paper,
-  Grid,
   Card,
-  CardContent,
-  FormControl,
-  InputLabel,
+  Row,
+  Col,
   Select,
-  MenuItem,
   Alert,
-  CircularProgress,
+  Spin,
   Tabs,
-  Tab,
   Button,
-} from '@mui/material';
+  Statistic,
+  Space,
+} from 'antd';
 import {
-  TrendingUp as TrendingUpIcon,
-  People as PeopleIcon,
-  AttachMoney as MoneyIcon,
-  Gamepad as GameIcon,
-  Download as DownloadIcon,
-} from '@mui/icons-material';
+  RiseOutlined,
+  UserOutlined,
+  DollarOutlined,
+  PlayCircleOutlined,
+  DownloadOutlined,
+} from '@ant-design/icons';
 import { adminApi } from '../services/api';
 import AnalyticsChart from '../components/Charts/AnalyticsChart';
 import { format, subDays, subMonths } from 'date-fns';
 
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
-
-function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
-
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`analytics-tabpanel-${index}`}
-      aria-labelledby={`analytics-tab-${index}`}
-      {...other}
-    >
-      {value === index && <Box sx={{ py: 3 }}>{children}</Box>}
-    </div>
-  );
-}
+const { Content } = Layout;
+const { Title, Text } = Typography;
+const { Option } = Select;
+const { TabPane } = Tabs;
 
 const Analytics: React.FC = () => {
   const [tabValue, setTabValue] = useState(0);
@@ -75,10 +54,10 @@ const Analytics: React.FC = () => {
       const results = await Promise.all(promises);
       
       const data = {
-        users: results[0].success ? results[0].data : null,
-        coins: results[1].success ? results[1].data : null,
-        sessions: results[2].success ? results[2].data : null,
-        payouts: results[3].success ? results[3].data : null,
+        users: results[0].success ? (results[0] as any).data : null,
+        coins: results[1].success ? (results[1] as any).data : null,
+        sessions: results[2].success ? (results[2] as any).data : null,
+        payouts: results[3].success ? (results[3] as any).data : null,
       };
 
       setAnalyticsData(data);
@@ -127,433 +106,386 @@ const Analytics: React.FC = () => {
 
   const getMetricIcon = (metric: string) => {
     switch (metric) {
-      case 'users': return <PeopleIcon />;
-      case 'coins': return <MoneyIcon />;
-      case 'sessions': return <GameIcon />;
-      case 'payouts': return <TrendingUpIcon />;
-      default: return <TrendingUpIcon />;
+      case 'users': return <UserOutlined />;
+      case 'coins': return <DollarOutlined />;
+      case 'sessions': return <PlayCircleOutlined />;
+      case 'payouts': return <RiseOutlined />;
+      default: return <RiseOutlined />;
     }
   };
 
   if (loading) {
     return (
-      <Container>
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
-          <CircularProgress size={60} />
-        </Box>
-      </Container>
+      <Content style={{ padding: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+          <Spin size="large" />
+        </div>
+      </Content>
     );
   }
 
   return (
-    <Container maxWidth="xl">
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
+    <Content style={{ padding: '24px' }}>
+      <div style={{ marginBottom: '24px' }}>
+        <Title level={2} style={{ marginBottom: '8px' }}>
           Analytics Dashboard
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
+        </Title>
+        <Text type="secondary">
           Detailed insights and reporting for your game's performance and user engagement.
-        </Typography>
-      </Box>
+        </Text>
+      </div>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
+        <Alert message={error} type="error" style={{ marginBottom: '16px' }} />
       )}
 
       {/* Controls */}
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} md={3}>
-            <FormControl fullWidth>
-              <InputLabel>Timeframe</InputLabel>
-              <Select
-                value={timeframe}
-                label="Timeframe"
-                onChange={(e) => setTimeframe(e.target.value)}
-              >
-                <MenuItem value="daily">Last 7 Days</MenuItem>
-                <MenuItem value="weekly">Last 4 Weeks</MenuItem>
-                <MenuItem value="monthly">Last 12 Months</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} md={9}>
-            <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+      <Card style={{ marginBottom: '16px' }}>
+        <Row gutter={16} align="middle">
+          <Col xs={24} md={6}>
+            <Select
+              placeholder="Timeframe"
+              value={timeframe}
+              onChange={setTimeframe}
+              style={{ width: '100%' }}
+            >
+              <Option value="daily">Last 7 Days</Option>
+              <Option value="weekly">Last 4 Weeks</Option>
+              <Option value="monthly">Last 12 Months</Option>
+            </Select>
+          </Col>
+          <Col xs={24} md={18}>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
               <Button
-                variant="outlined"
-                startIcon={<DownloadIcon />}
+                icon={<DownloadOutlined />}
                 onClick={() => handleExport('users')}
               >
                 Export Users
               </Button>
               <Button
-                variant="outlined"
-                startIcon={<DownloadIcon />}
+                icon={<DownloadOutlined />}
                 onClick={() => handleExport('payouts')}
               >
                 Export Payouts
               </Button>
               <Button
-                variant="outlined"
-                startIcon={<DownloadIcon />}
+                icon={<DownloadOutlined />}
                 onClick={() => handleExport('analytics')}
               >
                 Export Analytics
               </Button>
-            </Box>
-          </Grid>
-        </Grid>
-      </Paper>
+            </div>
+          </Col>
+        </Row>
+      </Card>
 
       {/* Tabs */}
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Tabs value={tabValue} onChange={(e, newValue) => setTabValue(newValue)}>
-          <Tab label="User Analytics" />
-          <Tab label="Revenue Analytics" />
-          <Tab label="Engagement Analytics" />
-          <Tab label="Geographic Analytics" />
-        </Tabs>
-      </Box>
+      <Tabs activeKey={tabValue.toString()} onChange={(key) => setTabValue(parseInt(key))}>
+        <TabPane tab="User Analytics" key="0">
+          <Row gutter={[16, 16]}>
+            {/* Summary Cards */}
+            <Col xs={24} sm={12} md={6}>
+              <Card>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <UserOutlined style={{ color: '#1890ff', marginRight: '8px', fontSize: '20px' }} />
+                  <div>
+                    <Statistic
+                      title="Total Users"
+                      value={analyticsData?.users?.summary?.totalUsers || 0}
+                      valueStyle={{ fontSize: '18px', fontWeight: 'bold' }}
+                    />
+                  </div>
+                </div>
+              </Card>
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <Card>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <RiseOutlined style={{ color: '#52c41a', marginRight: '8px', fontSize: '20px' }} />
+                  <div>
+                    <Statistic
+                      title={`New Users (${timeframe})`}
+                      value={analyticsData?.users?.summary?.newUsers || 0}
+                      valueStyle={{ fontSize: '18px', fontWeight: 'bold' }}
+                    />
+                  </div>
+                </div>
+              </Card>
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <Card>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <PlayCircleOutlined style={{ color: '#13c2c2', marginRight: '8px', fontSize: '20px' }} />
+                  <div>
+                    <Statistic
+                      title="Active Users"
+                      value={analyticsData?.users?.summary?.activeUsers || 0}
+                      valueStyle={{ fontSize: '18px', fontWeight: 'bold' }}
+                    />
+                  </div>
+                </div>
+              </Card>
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <Card>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <DollarOutlined style={{ color: '#faad14', marginRight: '8px', fontSize: '20px' }} />
+                  <div>
+                    <Statistic
+                      title="Retention Rate"
+                      value={((analyticsData?.users?.summary?.retentionRate || 0) * 100).toFixed(1)}
+                      suffix="%"
+                      valueStyle={{ fontSize: '18px', fontWeight: 'bold' }}
+                    />
+                  </div>
+                </div>
+              </Card>
+            </Col>
 
-      {/* User Analytics */}
-      <TabPanel value={tabValue} index={0}>
-        <Grid container spacing={3}>
-          {/* Summary Cards */}
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <PeopleIcon sx={{ color: 'primary.main', mr: 2 }} />
-                  <Box>
-                    <Typography variant="h6" component="div">
-                      {analyticsData?.users?.summary?.totalUsers?.toLocaleString() || '0'}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Total Users
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <TrendingUpIcon sx={{ color: 'success.main', mr: 2 }} />
-                  <Box>
-                    <Typography variant="h6" component="div">
-                      {analyticsData?.users?.summary?.newUsers?.toLocaleString() || '0'}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      New Users ({timeframe})
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <GameIcon sx={{ color: 'info.main', mr: 2 }} />
-                  <Box>
-                    <Typography variant="h6" component="div">
-                      {analyticsData?.users?.summary?.activeUsers?.toLocaleString() || '0'}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Active Users
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <MoneyIcon sx={{ color: 'warning.main', mr: 2 }} />
-                  <Box>
-                    <Typography variant="h6" component="div">
-                      {((analyticsData?.users?.summary?.retentionRate || 0) * 100).toFixed(1)}%
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Retention Rate
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
+            {/* User Growth Chart */}
+            <Col xs={24} md={16}>
+              <AnalyticsChart
+                data={formatChartData(analyticsData?.users?.analyticsData || [], 'date', 'count')}
+                type="area"
+                title="User Growth Over Time"
+                height={350}
+              />
+            </Col>
 
-          {/* User Growth Chart */}
-          <Grid item xs={12} md={8}>
-            <AnalyticsChart
-              data={formatChartData(analyticsData?.users?.analyticsData || [], 'date', 'count')}
-              type="area"
-              title="User Growth Over Time"
-              height={350}
-            />
-          </Grid>
+            {/* User Status Distribution */}
+            <Col xs={24} md={8}>
+              <AnalyticsChart
+                data={[
+                  { name: 'Active', value: analyticsData?.users?.summary?.activeUsers || 0 },
+                  { name: 'Inactive', value: (analyticsData?.users?.summary?.totalUsers || 0) - (analyticsData?.users?.summary?.activeUsers || 0) },
+                ]}
+                type="pie"
+                title="User Status Distribution"
+                height={350}
+              />
+            </Col>
+          </Row>
+        </TabPane>
 
-          {/* User Status Distribution */}
-          <Grid item xs={12} md={4}>
-            <AnalyticsChart
-              data={[
-                { name: 'Active', value: analyticsData?.users?.summary?.activeUsers || 0 },
-                { name: 'Inactive', value: (analyticsData?.users?.summary?.totalUsers || 0) - (analyticsData?.users?.summary?.activeUsers || 0) },
-              ]}
-              type="pie"
-              title="User Status Distribution"
-              height={350}
-            />
-          </Grid>
-        </Grid>
-      </TabPanel>
+        {/* Revenue Analytics */}
+        <TabPane tab="Revenue Analytics" key="1">
+          <Row gutter={[16, 16]}>
+            {/* Revenue Summary Cards */}
+            <Col xs={24} sm={12} md={6}>
+              <Card>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <DollarOutlined style={{ color: '#52c41a', marginRight: '8px', fontSize: '20px' }} />
+                  <div>
+                    <Statistic
+                      title="Total Coins Distributed"
+                      value={analyticsData?.coins?.summary?.totalCoinsDistributed || 0}
+                      valueStyle={{ fontSize: '18px', fontWeight: 'bold' }}
+                    />
+                  </div>
+                </div>
+              </Card>
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <Card>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <RiseOutlined style={{ color: '#1890ff', marginRight: '8px', fontSize: '20px' }} />
+                  <div>
+                    <Statistic
+                      title="Total Payouts"
+                      value={analyticsData?.payouts?.summary?.totalPayouts || 0}
+                      prefix="$"
+                      precision={2}
+                      valueStyle={{ fontSize: '18px', fontWeight: 'bold' }}
+                    />
+                  </div>
+                </div>
+              </Card>
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <Card>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <PlayCircleOutlined style={{ color: '#13c2c2', marginRight: '8px', fontSize: '20px' }} />
+                  <div>
+                    <Statistic
+                      title="Avg Coins per User"
+                      value={analyticsData?.coins?.summary?.avgCoinsPerUser || 0}
+                      valueStyle={{ fontSize: '18px', fontWeight: 'bold' }}
+                    />
+                  </div>
+                </div>
+              </Card>
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <Card>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <UserOutlined style={{ color: '#faad14', marginRight: '8px', fontSize: '20px' }} />
+                  <div>
+                    <Statistic
+                      title="Payout Conversion Rate"
+                      value={((analyticsData?.payouts?.summary?.conversionRate || 0) * 100).toFixed(1)}
+                      suffix="%"
+                      valueStyle={{ fontSize: '18px', fontWeight: 'bold' }}
+                    />
+                  </div>
+                </div>
+              </Card>
+            </Col>
 
-      {/* Revenue Analytics */}
-      <TabPanel value={tabValue} index={1}>
-        <Grid container spacing={3}>
-          {/* Revenue Summary Cards */}
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <MoneyIcon sx={{ color: 'success.main', mr: 2 }} />
-                  <Box>
-                    <Typography variant="h6" component="div">
-                      {analyticsData?.coins?.summary?.totalCoinsDistributed?.toLocaleString() || '0'}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Total Coins Distributed
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <TrendingUpIcon sx={{ color: 'primary.main', mr: 2 }} />
-                  <Box>
-                    <Typography variant="h6" component="div">
-                      ${analyticsData?.payouts?.summary?.totalPayouts?.toFixed(2) || '0.00'}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Total Payouts
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <GameIcon sx={{ color: 'info.main', mr: 2 }} />
-                  <Box>
-                    <Typography variant="h6" component="div">
-                      {analyticsData?.coins?.summary?.avgCoinsPerUser?.toLocaleString() || '0'}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Avg Coins per User
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <PeopleIcon sx={{ color: 'warning.main', mr: 2 }} />
-                  <Box>
-                    <Typography variant="h6" component="div">
-                      {((analyticsData?.payouts?.summary?.conversionRate || 0) * 100).toFixed(1)}%
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Payout Conversion Rate
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
+            {/* Revenue Charts */}
+            <Col xs={24} md={12}>
+              <AnalyticsChart
+                data={formatChartData(analyticsData?.coins?.analyticsData || [], 'date', 'amount')}
+                type="bar"
+                title="Coin Distribution Over Time"
+                height={350}
+              />
+            </Col>
 
-          {/* Revenue Charts */}
-          <Grid item xs={12} md={6}>
-            <AnalyticsChart
-              data={formatChartData(analyticsData?.coins?.analyticsData || [], 'date', 'amount')}
-              type="bar"
-              title="Coin Distribution Over Time"
-              height={350}
-            />
-          </Grid>
+            <Col xs={24} md={12}>
+              <AnalyticsChart
+                data={formatChartData(analyticsData?.payouts?.analyticsData || [], 'date', 'amount')}
+                type="line"
+                title="Payouts Over Time"
+                height={350}
+              />
+            </Col>
+          </Row>
+        </TabPane>
 
-          <Grid item xs={12} md={6}>
-            <AnalyticsChart
-              data={formatChartData(analyticsData?.payouts?.analyticsData || [], 'date', 'amount')}
-              type="line"
-              title="Payouts Over Time"
-              height={350}
-            />
-          </Grid>
-        </Grid>
-      </TabPanel>
+        {/* Engagement Analytics */}
+        <TabPane tab="Engagement Analytics" key="2">
+          <Row gutter={[16, 16]}>
+            {/* Engagement Summary Cards */}
+            <Col xs={24} sm={12} md={6}>
+              <Card>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <PlayCircleOutlined style={{ color: '#1890ff', marginRight: '8px', fontSize: '20px' }} />
+                  <div>
+                    <Statistic
+                      title="Total Sessions"
+                      value={analyticsData?.sessions?.summary?.totalSessions || 0}
+                      valueStyle={{ fontSize: '18px', fontWeight: 'bold' }}
+                    />
+                  </div>
+                </div>
+              </Card>
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <Card>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <RiseOutlined style={{ color: '#52c41a', marginRight: '8px', fontSize: '20px' }} />
+                  <div>
+                    <Statistic
+                      title="Avg Session Duration"
+                      value={Math.round(analyticsData?.sessions?.summary?.avgSessionDuration / 60 || 0)}
+                      suffix="m"
+                      valueStyle={{ fontSize: '18px', fontWeight: 'bold' }}
+                    />
+                  </div>
+                </div>
+              </Card>
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <Card>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <UserOutlined style={{ color: '#13c2c2', marginRight: '8px', fontSize: '20px' }} />
+                  <div>
+                    <Statistic
+                      title="Sessions per User"
+                      value={analyticsData?.sessions?.summary?.avgSessionsPerUser?.toFixed(1) || '0.0'}
+                      valueStyle={{ fontSize: '18px', fontWeight: 'bold' }}
+                    />
+                  </div>
+                </div>
+              </Card>
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <Card>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <DollarOutlined style={{ color: '#faad14', marginRight: '8px', fontSize: '20px' }} />
+                  <div>
+                    <Statistic
+                      title="Total Play Time"
+                      value={analyticsData?.sessions?.summary?.totalEngagementTime ? 
+                        Math.round(analyticsData.sessions.summary.totalEngagementTime / 3600) : 0}
+                      suffix="h"
+                      valueStyle={{ fontSize: '18px', fontWeight: 'bold' }}
+                    />
+                  </div>
+                </div>
+              </Card>
+            </Col>
 
-      {/* Engagement Analytics */}
-      <TabPanel value={tabValue} index={2}>
-        <Grid container spacing={3}>
-          {/* Engagement Summary Cards */}
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <GameIcon sx={{ color: 'primary.main', mr: 2 }} />
-                  <Box>
-                    <Typography variant="h6" component="div">
-                      {analyticsData?.sessions?.summary?.totalSessions?.toLocaleString() || '0'}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Total Sessions
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <TrendingUpIcon sx={{ color: 'success.main', mr: 2 }} />
-                  <Box>
-                    <Typography variant="h6" component="div">
-                      {Math.round(analyticsData?.sessions?.summary?.avgSessionDuration / 60 || 0)}m
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Avg Session Duration
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <PeopleIcon sx={{ color: 'info.main', mr: 2 }} />
-                  <Box>
-                    <Typography variant="h6" component="div">
-                      {analyticsData?.sessions?.summary?.avgSessionsPerUser?.toFixed(1) || '0.0'}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Sessions per User
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <MoneyIcon sx={{ color: 'warning.main', mr: 2 }} />
-                  <Box>
-                    <Typography variant="h6" component="div">
-                      {analyticsData?.sessions?.summary?.totalEngagementTime ? 
-                        Math.round(analyticsData.sessions.summary.totalEngagementTime / 3600) : '0'}h
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Total Play Time
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
+            {/* Engagement Charts */}
+            <Col xs={24} md={16}>
+              <AnalyticsChart
+                data={formatChartData(analyticsData?.sessions?.analyticsData || [], 'date', 'count')}
+                type="line"
+                title="Daily Active Sessions"
+                height={350}
+              />
+            </Col>
 
-          {/* Engagement Charts */}
-          <Grid item xs={12} md={8}>
-            <AnalyticsChart
-              data={formatChartData(analyticsData?.sessions?.analyticsData || [], 'date', 'count')}
-              type="line"
-              title="Daily Active Sessions"
-              height={350}
-            />
-          </Grid>
+            <Col xs={24} md={8}>
+              <AnalyticsChart
+                data={formatChartData(analyticsData?.sessions?.hourlyData || [], 'hour', 'sessions')}
+                type="bar"
+                title="Sessions by Hour"
+                height={350}
+              />
+            </Col>
+          </Row>
+        </TabPane>
 
-          <Grid item xs={12} md={4}>
-            <AnalyticsChart
-              data={formatChartData(analyticsData?.sessions?.hourlyData || [], 'hour', 'sessions')}
-              type="bar"
-              title="Sessions by Hour"
-              height={350}
-            />
-          </Grid>
-        </Grid>
-      </TabPanel>
-
-      {/* Geographic Analytics */}
-      <TabPanel value={tabValue} index={3}>
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={8}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
+        {/* Geographic Analytics */}
+        <TabPane tab="Geographic Analytics" key="3">
+          <Row gutter={[16, 16]}>
+            <Col xs={24} md={16}>
+              <Card>
+                <Title level={4} style={{ marginBottom: '16px' }}>
                   Users by Country
-                </Typography>
+                </Title>
                 {analyticsData?.users?.countryData ? (
-                  <Box>
+                  <div>
                     {analyticsData.users.countryData.slice(0, 10).map((country: any, index: number) => (
-                      <Box key={country._id} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1, borderBottom: index < 9 ? 1 : 0, borderColor: 'divider' }}>
-                        <Typography variant="body1">
-                          {country._id || 'Unknown'}
-                        </Typography>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <Typography variant="body2" color="text.secondary">
+                      <div key={country._id} style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center', 
+                        padding: '8px 0',
+                        borderBottom: index < 9 ? '1px solid #f0f0f0' : 'none'
+                      }}>
+                        <Text>{country._id || 'Unknown'}</Text>
+                        <Space>
+                          <Text type="secondary">
                             {((country.count / (analyticsData.users.summary?.totalUsers || 1)) * 100).toFixed(1)}%
-                          </Typography>
-                          <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                            {country.count.toLocaleString()}
-                          </Typography>
-                        </Box>
-                      </Box>
+                          </Text>
+                          <Text strong>{country.count.toLocaleString()}</Text>
+                        </Space>
+                      </div>
                     ))}
-                  </Box>
+                  </div>
                 ) : (
-                  <Typography variant="body2" color="text.secondary">
-                    No geographic data available.
-                  </Typography>
+                  <Text type="secondary">No geographic data available.</Text>
                 )}
-              </CardContent>
-            </Card>
-          </Grid>
+              </Card>
+            </Col>
 
-          <Grid item xs={12} md={4}>
-            <AnalyticsChart
-              data={analyticsData?.users?.countryData?.slice(0, 5).map((country: any) => ({
-                name: country._id || 'Unknown',
-                value: country.count
-              })) || []}
-              type="pie"
-              title="Top 5 Countries"
-              height={350}
-            />
-          </Grid>
-        </Grid>
-      </TabPanel>
-    </Container>
+            <Col xs={24} md={8}>
+              <AnalyticsChart
+                data={analyticsData?.users?.countryData?.slice(0, 5).map((country: any) => ({
+                  name: country._id || 'Unknown',
+                  value: country.count
+                })) || []}
+                type="pie"
+                title="Top 5 Countries"
+                height={350}
+              />
+            </Col>
+          </Row>
+        </TabPane>
+      </Tabs>
+    </Content>
   );
 };
 

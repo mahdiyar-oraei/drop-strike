@@ -1,66 +1,41 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Container,
+  Layout,
   Typography,
-  Box,
-  Paper,
-  TextField,
+  Card,
+  Input,
   Button,
   Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Chip,
+  Tag,
   Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Card,
-  CardContent,
-  IconButton,
-  Tooltip,
+  Modal,
+  Form,
   Switch,
-  FormControlLabel,
   Tabs,
-  Tab,
-} from '@mui/material';
-import Grid from '@mui/material/Grid';
-import { DataGrid, GridColDef } from '@mui/x-data-grid';
+  Row,
+  Col,
+  Space,
+  Tooltip,
+  Table,
+  message,
+} from 'antd';
 import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Visibility as ViewIcon,
-  TrendingUp as AnalyticsIcon,
-  VideoLibrary as VideoIcon,
-  ViewModule as InterstitialIcon,
-  ViewCarousel as BannerIcon,
-} from '@mui/icons-material';
+  PlusOutlined,
+  EditOutlined,
+  EyeOutlined,
+  BarChartOutlined,
+  VideoCameraOutlined,
+  AppstoreOutlined,
+  BorderOutlined,
+} from '@ant-design/icons';
 import { AdReward } from '../types';
 import { adApi } from '../services/api';
 import { format } from 'date-fns';
 
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
-
-function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
-
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`simple-tabpanel-${index}`}
-      aria-labelledby={`simple-tab-${index}`}
-      {...other}
-    >
-      {value === index && <Box sx={{ py: 3 }}>{children}</Box>}
-    </div>
-  );
-}
+const { Content } = Layout;
+const { Title, Text } = Typography;
+const { Option } = Select;
+const { TabPane } = Tabs;
 
 const Ads: React.FC = () => {
   const [tabValue, setTabValue] = useState(0);
@@ -69,38 +44,23 @@ const Ads: React.FC = () => {
   const [error, setError] = useState('');
   const [adTypeFilter, setAdTypeFilter] = useState('');
   const [isActiveFilter, setIsActiveFilter] = useState('');
-  const [createDialog, setCreateDialog] = useState(false);
-  const [editDialog, setEditDialog] = useState<{ open: boolean; adReward: AdReward | null }>({
+  const [createModal, setCreateModal] = useState(false);
+  const [editModal, setEditModal] = useState<{ open: boolean; adReward: AdReward | null }>({
     open: false,
     adReward: null,
   });
   const [analytics, setAnalytics] = useState<any>(null);
   const [analyticsTimeframe, setAnalyticsTimeframe] = useState('monthly');
   const [pagination, setPagination] = useState({
-    page: 0,
+    current: 1,
     pageSize: 25,
     total: 0,
   });
-
-  // Form state
-  const [formData, setFormData] = useState({
-    adType: 'rewarded_video',
-    adUnitId: '',
-    adUnitName: '',
-    coinReward: 10,
-    description: '',
-    minimumWatchTime: 30,
-    dailyLimit: 10,
-    isActive: true,
-    requirements: {
-      minLevel: 0,
-      cooldownMinutes: 5,
-    },
-  });
+  const [form] = Form.useForm();
 
   useEffect(() => {
     loadAdRewards();
-  }, [pagination.page, pagination.pageSize, adTypeFilter, isActiveFilter]);
+  }, [pagination.current, pagination.pageSize, adTypeFilter, isActiveFilter]);
 
   useEffect(() => {
     if (tabValue === 1) {
@@ -112,7 +72,7 @@ const Ads: React.FC = () => {
     try {
       setLoading(true);
       const response = await adApi.getAdRewards({
-        page: pagination.page + 1,
+        page: pagination.current,
         limit: pagination.pageSize,
         adType: adTypeFilter || undefined,
         isActive: isActiveFilter ? isActiveFilter === 'true' : undefined,
@@ -146,59 +106,44 @@ const Ads: React.FC = () => {
     }
   };
 
-  const handleCreateAdReward = async () => {
+  const handleCreateAdReward = async (values: any) => {
     try {
-      const response = await adApi.createAdReward(formData as Partial<AdReward>);
+      const response = await adApi.createAdReward(values as Partial<AdReward>);
       if (response.success) {
-        setCreateDialog(false);
-        resetForm();
+        message.success('Ad reward created successfully');
+        setCreateModal(false);
+        form.resetFields();
         loadAdRewards();
       } else {
-        setError('Failed to create ad reward');
+        message.error('Failed to create ad reward');
       }
     } catch (err) {
-      setError('An error occurred while creating ad reward');
+      message.error('An error occurred while creating ad reward');
       console.error('Create ad reward error:', err);
     }
   };
 
-  const handleUpdateAdReward = async () => {
-    if (!editDialog.adReward) return;
+  const handleUpdateAdReward = async (values: any) => {
+    if (!editModal.adReward) return;
 
     try {
-      const response = await adApi.updateAdReward(editDialog.adReward._id, formData as Partial<AdReward>);
+      const response = await adApi.updateAdReward(editModal.adReward._id, values as Partial<AdReward>);
       if (response.success) {
-        setEditDialog({ open: false, adReward: null });
-        resetForm();
+        message.success('Ad reward updated successfully');
+        setEditModal({ open: false, adReward: null });
+        form.resetFields();
         loadAdRewards();
       } else {
-        setError('Failed to update ad reward');
+        message.error('Failed to update ad reward');
       }
     } catch (err) {
-      setError('An error occurred while updating ad reward');
+      message.error('An error occurred while updating ad reward');
       console.error('Update ad reward error:', err);
     }
   };
 
-  const resetForm = () => {
-    setFormData({
-      adType: 'rewarded_video',
-      adUnitId: '',
-      adUnitName: '',
-      coinReward: 10,
-      description: '',
-      minimumWatchTime: 30,
-      dailyLimit: 10,
-      isActive: true,
-      requirements: {
-        minLevel: 0,
-        cooldownMinutes: 5,
-      },
-    });
-  };
-
-  const openEditDialog = (adReward: AdReward) => {
-    setFormData({
+  const openEditModal = (adReward: AdReward) => {
+    form.setFieldsValue({
       adType: adReward.adType,
       adUnitId: adReward.adUnitId,
       adUnitName: adReward.adUnitName,
@@ -207,493 +152,424 @@ const Ads: React.FC = () => {
       minimumWatchTime: adReward.minimumWatchTime || 30,
       dailyLimit: adReward.dailyLimit || 10,
       isActive: adReward.isActive,
-      requirements: {
-        minLevel: adReward.requirements?.minLevel || 0,
-        cooldownMinutes: adReward.requirements?.cooldownMinutes || 5,
-      },
+      minLevel: adReward.requirements?.minLevel || 0,
+      cooldownMinutes: adReward.requirements?.cooldownMinutes || 5,
     });
-    setEditDialog({ open: true, adReward });
+    setEditModal({ open: true, adReward });
   };
 
   const getAdTypeIcon = (adType: string) => {
     switch (adType) {
-      case 'rewarded_video': return <VideoIcon />;
-      case 'interstitial': return <InterstitialIcon />;
-      case 'banner': return <BannerIcon />;
-      default: return <ViewIcon />;
+      case 'rewarded_video': return <VideoCameraOutlined />;
+      case 'interstitial': return <AppstoreOutlined />;
+      case 'banner': return <BorderOutlined />;
+      default: return <EyeOutlined />;
     }
   };
 
   const getAdTypeColor = (adType: string) => {
     switch (adType) {
-      case 'rewarded_video': return 'primary';
-      case 'interstitial': return 'secondary';
-      case 'banner': return 'info';
+      case 'rewarded_video': return 'blue';
+      case 'interstitial': return 'purple';
+      case 'banner': return 'cyan';
       default: return 'default';
     }
   };
 
-  const columns: GridColDef[] = [
+  const columns = [
     {
-      field: 'adUnitName',
-      headerName: 'Ad Unit',
+      title: 'Ad Unit',
+      dataIndex: 'adUnitName',
+      key: 'adUnitName',
       width: 200,
-      renderCell: (params) => (
-        <Box>
-          <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-            {params.value}
-          </Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
-            {params.row.adUnitId}
-          </Typography>
-        </Box>
+      render: (text: string, record: AdReward) => (
+        <div>
+          <div style={{ fontWeight: 'bold' }}>{text}</div>
+          <div style={{ fontFamily: 'monospace', fontSize: '12px', color: '#666' }}>
+            {record.adUnitId}
+          </div>
+        </div>
       ),
     },
     {
-      field: 'adType',
-      headerName: 'Type',
+      title: 'Type',
+      dataIndex: 'adType',
+      key: 'adType',
       width: 140,
-      renderCell: (params) => (
-        <Chip
-          icon={getAdTypeIcon(params.value)}
-          label={params.value.replace('_', ' ').toUpperCase()}
-          color={getAdTypeColor(params.value) as any}
-          size="small"
-        />
+      render: (adType: string) => (
+        <Tag icon={getAdTypeIcon(adType)} color={getAdTypeColor(adType)}>
+          {adType.replace('_', ' ').toUpperCase()}
+        </Tag>
       ),
     },
     {
-      field: 'coinReward',
-      headerName: 'Reward',
+      title: 'Reward',
+      dataIndex: 'coinReward',
+      key: 'coinReward',
       width: 100,
-      renderCell: (params) => (
-        <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-          {params.value} coins
-        </Typography>
+      render: (value: number) => (
+        <Text strong>{value} coins</Text>
       ),
     },
     {
-      field: 'dailyLimit',
-      headerName: 'Daily Limit',
+      title: 'Daily Limit',
+      dataIndex: 'dailyLimit',
+      key: 'dailyLimit',
       width: 110,
-      renderCell: (params) => (
-        <Typography variant="body2">
-          {params.value || 'Unlimited'}
-        </Typography>
-      ),
+      render: (value: number) => value || 'Unlimited',
     },
     {
-      field: 'minimumWatchTime',
-      headerName: 'Watch Time',
+      title: 'Watch Time',
+      dataIndex: 'minimumWatchTime',
+      key: 'minimumWatchTime',
       width: 120,
-      renderCell: (params) => (
-        <Typography variant="body2">
-          {params.value}s
-        </Typography>
-      ),
+      render: (value: number) => `${value}s`,
     },
     {
-      field: 'cooldown',
-      headerName: 'Cooldown',
+      title: 'Cooldown',
+      key: 'cooldown',
       width: 100,
-      renderCell: (params) => (
-        <Typography variant="body2">
-          {params.row.requirements?.cooldownMinutes || 0}m
-        </Typography>
-      ),
+      render: (record: AdReward) => `${record.requirements?.cooldownMinutes || 0}m`,
     },
     {
-      field: 'isActive',
-      headerName: 'Status',
+      title: 'Status',
+      dataIndex: 'isActive',
+      key: 'isActive',
       width: 100,
-      renderCell: (params) => (
-        <Chip
-          label={params.value ? 'Active' : 'Inactive'}
-          color={params.value ? 'success' : 'default'}
-          size="small"
-        />
+      render: (isActive: boolean) => (
+        <Tag color={isActive ? 'success' : 'default'}>
+          {isActive ? 'Active' : 'Inactive'}
+        </Tag>
       ),
     },
     {
-      field: 'createdAt',
-      headerName: 'Created',
+      title: 'Created',
+      dataIndex: 'createdAt',
+      key: 'createdAt',
       width: 120,
-      renderCell: (params) => (
-        <Typography variant="body2">
-          {format(new Date(params.value), 'MMM dd, yyyy')}
-        </Typography>
-      ),
+      render: (date: string) => format(new Date(date), 'MMM dd, yyyy'),
     },
     {
-      field: 'actions',
-      headerName: 'Actions',
+      title: 'Actions',
+      key: 'actions',
       width: 120,
-      sortable: false,
-      renderCell: (params) => (
-        <Box sx={{ display: 'flex', gap: 0.5 }}>
+      render: (record: AdReward) => (
+        <Space>
           <Tooltip title="Edit Ad Unit">
-            <IconButton
-              size="small"
-              onClick={() => openEditDialog(params.row)}
-            >
-              <EditIcon fontSize="small" />
-            </IconButton>
+            <Button
+              type="text"
+              icon={<EditOutlined />}
+              onClick={() => openEditModal(record)}
+            />
           </Tooltip>
           <Tooltip title="View Analytics">
-            <IconButton
-              size="small"
-              color="primary"
-            >
-              <AnalyticsIcon fontSize="small" />
-            </IconButton>
+            <Button
+              type="text"
+              icon={<BarChartOutlined />}
+            />
           </Tooltip>
-        </Box>
+        </Space>
       ),
     },
   ];
 
   return (
-    <Container maxWidth="xl">
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
+    <Content style={{ padding: '24px' }}>
+      <div style={{ marginBottom: '24px' }}>
+        <Title level={2} style={{ marginBottom: '8px' }}>
           Ad Rewards Management
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
+        </Title>
+        <Text type="secondary">
           Configure and monitor different ad reward types and their performance.
-        </Typography>
-      </Box>
+        </Text>
+      </div>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
+        <Alert message={error} type="error" style={{ marginBottom: '16px' }} />
       )}
 
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Tabs value={tabValue} onChange={(e, newValue) => setTabValue(newValue)}>
-          <Tab label="Ad Rewards Configuration" />
-          <Tab label="Analytics" />
-        </Tabs>
-      </Box>
+      <Tabs activeKey={tabValue.toString()} onChange={(key) => setTabValue(parseInt(key))}>
+        <TabPane tab="Ad Rewards Configuration" key="0">
 
-      <TabPanel value={tabValue} index={0}>
-        {/* Filters and Actions */}
-        <Paper sx={{ p: 3, mb: 3 }}>
-          <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} md={3}>
-              <FormControl fullWidth>
-                <InputLabel>Ad Type</InputLabel>
+          {/* Filters and Actions */}
+          <Card style={{ marginBottom: '16px' }}>
+            <Row gutter={16} align="middle">
+              <Col xs={24} md={6}>
                 <Select
+                  placeholder="Ad Type"
                   value={adTypeFilter}
-                  label="Ad Type"
-                  onChange={(e) => setAdTypeFilter(e.target.value)}
+                  onChange={setAdTypeFilter}
+                  style={{ width: '100%' }}
+                  allowClear
                 >
-                  <MenuItem value="">All Types</MenuItem>
-                  <MenuItem value="rewarded_video">Rewarded Video</MenuItem>
-                  <MenuItem value="interstitial">Interstitial</MenuItem>
-                  <MenuItem value="banner">Banner</MenuItem>
+                  <Option value="">All Types</Option>
+                  <Option value="rewarded_video">Rewarded Video</Option>
+                  <Option value="interstitial">Interstitial</Option>
+                  <Option value="banner">Banner</Option>
                 </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} md={3}>
-              <FormControl fullWidth>
-                <InputLabel>Status</InputLabel>
+              </Col>
+              <Col xs={24} md={6}>
                 <Select
+                  placeholder="Status"
                   value={isActiveFilter}
-                  label="Status"
-                  onChange={(e) => setIsActiveFilter(e.target.value)}
+                  onChange={setIsActiveFilter}
+                  style={{ width: '100%' }}
+                  allowClear
                 >
-                  <MenuItem value="">All</MenuItem>
-                  <MenuItem value="true">Active</MenuItem>
-                  <MenuItem value="false">Inactive</MenuItem>
+                  <Option value="">All</Option>
+                  <Option value="true">Active</Option>
+                  <Option value="false">Inactive</Option>
                 </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <Button
-                  variant="contained"
-                  startIcon={<AddIcon />}
-                  onClick={() => setCreateDialog(true)}
-                >
-                  Add Ad Unit
-                </Button>
-              </Box>
-            </Grid>
-          </Grid>
-        </Paper>
-
-        {/* Ad Rewards Table */}
-        <Paper sx={{ height: 600 }}>
-          <DataGrid
-            rows={adRewards}
-            columns={columns}
-            loading={loading}
-            paginationMode="server"
-            rowCount={pagination.total}
-            paginationModel={{
-              page: pagination.page,
-              pageSize: pagination.pageSize,
-            }}
-            onPaginationModelChange={(model) => {
-              setPagination(prev => ({
-                ...prev,
-                page: model.page,
-                pageSize: model.pageSize,
-              }));
-            }}
-            pageSizeOptions={[10, 25, 50, 100]}
-            getRowId={(row) => row._id}
-            sx={{
-              '& .MuiDataGrid-row:hover': {
-                backgroundColor: 'action.hover',
-              },
-            }}
-          />
-        </Paper>
-      </TabPanel>
-
-      <TabPanel value={tabValue} index={1}>
-        {/* Analytics */}
-        <Grid container spacing={3} sx={{ mb: 3 }}>
-          <Grid item xs={12} md={3}>
-            <FormControl fullWidth>
-              <InputLabel>Timeframe</InputLabel>
-              <Select
-                value={analyticsTimeframe}
-                label="Timeframe"
-                onChange={(e) => setAnalyticsTimeframe(e.target.value)}
-              >
-                <MenuItem value="daily">Today</MenuItem>
-                <MenuItem value="weekly">This Week</MenuItem>
-                <MenuItem value="monthly">This Month</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-        </Grid>
-
-        {analytics && (
-          <Grid container spacing={3}>
-            {/* Overall Stats */}
-            {analytics.overallStats?.map((stat: any, index: number) => (
-              <Grid key={index} xs={12} md={4}>
-                <Card>
-                  <CardContent>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                      {getAdTypeIcon(stat.adType)}
-                      <Typography variant="h6" sx={{ ml: 1 }}>
-                        {stat.adType.replace('_', ' ').toUpperCase()}
-                      </Typography>
-                    </Box>
-                    <Typography variant="h4" component="div" gutterBottom>
-                      {stat.totalViews.toLocaleString()}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                      Total Views
-                    </Typography>
-                    <Typography variant="body2">
-                      {stat.totalCoinsDistributed.toLocaleString()} coins distributed
-                    </Typography>
-                    <Typography variant="body2">
-                      {stat.uniqueUserCount} unique users
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-
-            {/* Top Performing Ad Units */}
-            <Grid item xs={12}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    Top Performing Ad Units
-                  </Typography>
-                  {analytics.topAdUnits?.length > 0 ? (
-                    <Box>
-                      {analytics.topAdUnits.map((unit: any, index: number) => (
-                        <Box key={index} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1, borderBottom: index < analytics.topAdUnits.length - 1 ? 1 : 0, borderColor: 'divider' }}>
-                          <Box>
-                            <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                              {unit.adUnitName || unit.adUnitId}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              {unit.adType?.replace('_', ' ').toUpperCase()}
-                            </Typography>
-                          </Box>
-                          <Box sx={{ textAlign: 'right' }}>
-                            <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                              {unit.totalViews.toLocaleString()} views
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              {unit.totalCoinsDistributed.toLocaleString()} coins
-                            </Typography>
-                          </Box>
-                        </Box>
-                      ))}
-                    </Box>
-                  ) : (
-                    <Typography variant="body2" color="text.secondary">
-                      No data available for the selected timeframe.
-                    </Typography>
-                  )}
-                </CardContent>
-              </Card>
-            </Grid>
-          </Grid>
-        )}
-      </TabPanel>
-
-      {/* Create/Edit Dialog */}
-      <Dialog 
-        open={createDialog || editDialog.open} 
-        onClose={() => {
-          setCreateDialog(false);
-          setEditDialog({ open: false, adReward: null });
-          resetForm();
-        }} 
-        maxWidth="md" 
-        fullWidth
-      >
-        <DialogTitle>
-          {createDialog ? 'Create New Ad Unit' : 'Edit Ad Unit'}
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ pt: 1 }}>
-            <Grid container spacing={2}>
-              <Grid xs={12} md={6}>
-                <FormControl fullWidth>
-                  <InputLabel>Ad Type</InputLabel>
-                  <Select
-                    value={formData.adType}
-                    label="Ad Type"
-                    onChange={(e) => setFormData({ ...formData, adType: e.target.value })}
-                    disabled={!!editDialog.adReward}
+              </Col>
+              <Col xs={24} md={12}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={() => setCreateModal(true)}
                   >
-                    <MenuItem value="rewarded_video">Rewarded Video</MenuItem>
-                    <MenuItem value="interstitial">Interstitial</MenuItem>
-                    <MenuItem value="banner">Banner</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Ad Unit ID"
-                  value={formData.adUnitId}
-                  onChange={(e) => setFormData({ ...formData, adUnitId: e.target.value })}
-                  disabled={!!editDialog.adReward}
-                  required
-                />
-              </Grid>
-              <Grid xs={12}>
-                <TextField
-                  fullWidth
-                  label="Ad Unit Name"
-                  value={formData.adUnitName}
-                  onChange={(e) => setFormData({ ...formData, adUnitName: e.target.value })}
-                  required
-                />
-              </Grid>
-              <Grid xs={12}>
-                <TextField
-                  fullWidth
-                  label="Description"
-                  multiline
-                  rows={2}
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                />
-              </Grid>
-              <Grid xs={12} md={4}>
-                <TextField
-                  fullWidth
-                  label="Coin Reward"
-                  type="number"
-                  value={formData.coinReward}
-                  onChange={(e) => setFormData({ ...formData, coinReward: parseInt(e.target.value) })}
-                  inputProps={{ min: 1, max: 10000 }}
-                  required
-                />
-              </Grid>
-              <Grid xs={12} md={4}>
-                <TextField
-                  fullWidth
-                  label="Minimum Watch Time (seconds)"
-                  type="number"
-                  value={formData.minimumWatchTime}
-                  onChange={(e) => setFormData({ ...formData, minimumWatchTime: parseInt(e.target.value) })}
-                  inputProps={{ min: 0 }}
-                />
-              </Grid>
-              <Grid xs={12} md={4}>
-                <TextField
-                  fullWidth
-                  label="Daily Limit (0 = unlimited)"
-                  type="number"
-                  value={formData.dailyLimit}
-                  onChange={(e) => setFormData({ ...formData, dailyLimit: parseInt(e.target.value) })}
-                  inputProps={{ min: 0 }}
-                />
-              </Grid>
-              <Grid xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Minimum Level Required"
-                  type="number"
-                  value={formData.requirements.minLevel}
-                  onChange={(e) => setFormData({ 
-                    ...formData, 
-                    requirements: { ...formData.requirements, minLevel: parseInt(e.target.value) }
-                  })}
-                  inputProps={{ min: 0 }}
-                />
-              </Grid>
-              <Grid xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Cooldown (minutes)"
-                  type="number"
-                  value={formData.requirements.cooldownMinutes}
-                  onChange={(e) => setFormData({ 
-                    ...formData, 
-                    requirements: { ...formData.requirements, cooldownMinutes: parseInt(e.target.value) }
-                  })}
-                  inputProps={{ min: 0 }}
-                />
-              </Grid>
-              <Grid xs={12}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={formData.isActive}
-                      onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                    />
-                  }
-                  label="Active"
-                />
-              </Grid>
-            </Grid>
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => {
-            setCreateDialog(false);
-            setEditDialog({ open: false, adReward: null });
-            resetForm();
-          }}>
-            Cancel
-          </Button>
-          <Button
-            onClick={createDialog ? handleCreateAdReward : handleUpdateAdReward}
-            variant="contained"
-            disabled={!formData.adUnitId || !formData.adUnitName || !formData.coinReward}
-          >
-            {createDialog ? 'Create' : 'Update'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Container>
+                    Add Ad Unit
+                  </Button>
+                </div>
+              </Col>
+            </Row>
+          </Card>
+
+          {/* Ad Rewards Table */}
+          <Card>
+            <Table
+              columns={columns}
+              dataSource={adRewards}
+              loading={loading}
+              pagination={{
+                current: pagination.current,
+                pageSize: pagination.pageSize,
+                total: pagination.total,
+                showSizeChanger: true,
+                showQuickJumper: true,
+                showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
+                pageSizeOptions: ['10', '25', '50', '100'],
+                onChange: (page, pageSize) => {
+                  setPagination(prev => ({
+                    ...prev,
+                    current: page,
+                    pageSize: pageSize || prev.pageSize,
+                  }));
+                },
+              }}
+              rowKey="_id"
+              scroll={{ x: 1000 }}
+            />
+          </Card>
+        </TabPane>
+
+        <TabPane tab="Analytics" key="1">
+          {/* Analytics */}
+          <Row gutter={16} style={{ marginBottom: '16px' }}>
+            <Col xs={24} md={6}>
+              <Select
+                placeholder="Timeframe"
+                value={analyticsTimeframe}
+                onChange={setAnalyticsTimeframe}
+                style={{ width: '100%' }}
+              >
+                <Option value="daily">Today</Option>
+                <Option value="weekly">This Week</Option>
+                <Option value="monthly">This Month</Option>
+              </Select>
+            </Col>
+          </Row>
+
+          {analytics && (
+            <Row gutter={16}>
+              {/* Overall Stats */}
+              {analytics.overallStats?.map((stat: any, index: number) => (
+                <Col key={index} xs={24} md={8}>
+                  <Card>
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
+                      {getAdTypeIcon(stat.adType)}
+                      <Title level={4} style={{ margin: '0 0 0 8px' }}>
+                        {stat.adType.replace('_', ' ').toUpperCase()}
+                      </Title>
+                    </div>
+                    <Title level={2} style={{ marginBottom: '8px' }}>
+                      {stat.totalViews.toLocaleString()}
+                    </Title>
+                    <Text type="secondary" style={{ display: 'block', marginBottom: '8px' }}>
+                      Total Views
+                    </Text>
+                    <Text style={{ display: 'block' }}>
+                      {stat.totalCoinsDistributed.toLocaleString()} coins distributed
+                    </Text>
+                    <Text style={{ display: 'block' }}>
+                      {stat.uniqueUserCount} unique users
+                    </Text>
+                  </Card>
+                </Col>
+              ))}
+
+              {/* Top Performing Ad Units */}
+              <Col xs={24}>
+                <Card>
+                  <Title level={4} style={{ marginBottom: '16px' }}>
+                    Top Performing Ad Units
+                  </Title>
+                  {analytics.topAdUnits?.length > 0 ? (
+                    <div>
+                      {analytics.topAdUnits.map((unit: any, index: number) => (
+                        <div key={index} style={{ 
+                          display: 'flex', 
+                          justifyContent: 'space-between', 
+                          alignItems: 'center', 
+                          padding: '8px 0',
+                          borderBottom: index < analytics.topAdUnits.length - 1 ? '1px solid #f0f0f0' : 'none'
+                        }}>
+                          <div>
+                            <Text strong style={{ display: 'block' }}>
+                              {unit.adUnitName || unit.adUnitId}
+                            </Text>
+                            <Text type="secondary">
+                              {unit.adType?.replace('_', ' ').toUpperCase()}
+                            </Text>
+                          </div>
+                          <div style={{ textAlign: 'right' }}>
+                            <Text strong style={{ display: 'block' }}>
+                              {unit.totalViews.toLocaleString()} views
+                            </Text>
+                            <Text type="secondary">
+                              {unit.totalCoinsDistributed.toLocaleString()} coins
+                            </Text>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <Text type="secondary">
+                      No data available for the selected timeframe.
+                    </Text>
+                  )}
+                </Card>
+              </Col>
+            </Row>
+          )}
+        </TabPane>
+      </Tabs>
+
+      {/* Create/Edit Modal */}
+      <Modal
+        title={createModal ? 'Create New Ad Unit' : 'Edit Ad Unit'}
+        open={createModal || editModal.open}
+        onCancel={() => {
+          setCreateModal(false);
+          setEditModal({ open: false, adReward: null });
+          form.resetFields();
+        }}
+        footer={null}
+        width={800}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={createModal ? handleCreateAdReward : handleUpdateAdReward}
+          initialValues={{
+            adType: 'rewarded_video',
+            coinReward: 10,
+            minimumWatchTime: 30,
+            dailyLimit: 10,
+            isActive: true,
+            minLevel: 0,
+            cooldownMinutes: 5,
+          }}
+        >
+          <Row gutter={16}>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="adType"
+                label="Ad Type"
+                rules={[{ required: true, message: 'Please select ad type' }]}
+              >
+                <Select disabled={!!editModal.adReward}>
+                  <Option value="rewarded_video">Rewarded Video</Option>
+                  <Option value="interstitial">Interstitial</Option>
+                  <Option value="banner">Banner</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="adUnitId"
+                label="Ad Unit ID"
+                rules={[{ required: true, message: 'Please enter ad unit ID' }]}
+              >
+                <Input disabled={!!editModal.adReward} />
+              </Form.Item>
+            </Col>
+            <Col xs={24}>
+              <Form.Item
+                name="adUnitName"
+                label="Ad Unit Name"
+                rules={[{ required: true, message: 'Please enter ad unit name' }]}
+              >
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col xs={24}>
+              <Form.Item name="description" label="Description">
+                <Input.TextArea rows={2} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item
+                name="coinReward"
+                label="Coin Reward"
+                rules={[{ required: true, message: 'Please enter coin reward' }]}
+              >
+                <Input type="number" min={1} max={10000} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item name="minimumWatchTime" label="Minimum Watch Time (seconds)">
+                <Input type="number" min={0} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item name="dailyLimit" label="Daily Limit (0 = unlimited)">
+                <Input type="number" min={0} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item name="minLevel" label="Minimum Level Required">
+                <Input type="number" min={0} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item name="cooldownMinutes" label="Cooldown (minutes)">
+                <Input type="number" min={0} />
+              </Form.Item>
+            </Col>
+            <Col xs={24}>
+              <Form.Item name="isActive" valuePropName="checked">
+                <Switch /> Active
+              </Form.Item>
+            </Col>
+          </Row>
+          <div style={{ textAlign: 'right', marginTop: '16px' }}>
+            <Space>
+              <Button onClick={() => {
+                setCreateModal(false);
+                setEditModal({ open: false, adReward: null });
+                form.resetFields();
+              }}>
+                Cancel
+              </Button>
+              <Button type="primary" htmlType="submit">
+                {createModal ? 'Create' : 'Update'}
+              </Button>
+            </Space>
+          </div>
+        </Form>
+      </Modal>
+    </Content>
   );
 };
 

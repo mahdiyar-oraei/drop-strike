@@ -1,28 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Container,
+  Layout,
   Typography,
-  Box,
-  Paper,
-  TextField,
+  Card,
+  Input,
   Button,
   Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Chip,
+  Tag,
   Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Grid,
-} from '@mui/material';
-import { DataGrid, GridColDef, GridRowSelectionModel } from '@mui/x-data-grid';
-import { Search as SearchIcon, PersonAdd as PersonAddIcon } from '@mui/icons-material';
+  Modal,
+  Form,
+  Row,
+  Col,
+  Space,
+  Table,
+  message,
+} from 'antd';
+import { SearchOutlined, UserAddOutlined } from '@ant-design/icons';
 import { User } from '../types';
 import { userApi } from '../services/api';
 import { format } from 'date-fns';
+
+const { Content } = Layout;
+const { Title, Text } = Typography;
+const { Option } = Select;
 
 const Users: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -31,26 +32,27 @@ const Users: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [countryFilter, setCountryFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [selectedUsers, setSelectedUsers] = useState<GridRowSelectionModel>([]);
-  const [bulkActionDialog, setBulkActionDialog] = useState(false);
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [bulkActionModal, setBulkActionModal] = useState(false);
   const [bulkAction, setBulkAction] = useState('');
   const [coinAdjustment, setCoinAdjustment] = useState('');
   const [actionReason, setActionReason] = useState('');
   const [pagination, setPagination] = useState({
-    page: 0,
+    current: 1,
     pageSize: 25,
     total: 0,
   });
+  const [form] = Form.useForm();
 
   useEffect(() => {
     loadUsers();
-  }, [pagination.page, pagination.pageSize, searchTerm, countryFilter, statusFilter]);
+  }, [pagination.current, pagination.pageSize, searchTerm, countryFilter, statusFilter]);
 
   const loadUsers = async () => {
     try {
       setLoading(true);
       const response = await userApi.getUsers({
-        page: pagination.page + 1,
+        page: pagination.current,
         limit: pagination.pageSize,
         search: searchTerm || undefined,
         country: countryFilter || undefined,
@@ -76,303 +78,292 @@ const Users: React.FC = () => {
     }
   };
 
-  const handleBulkAction = async () => {
-    if (!bulkAction || (Array.isArray(selectedUsers) && selectedUsers.length === 0)) return;
+  const handleBulkAction = async (values: any) => {
+    if (!bulkAction || selectedRowKeys.length === 0) return;
 
     try {
-      const actionData: any = { reason: actionReason };
+      const actionData: any = { reason: values.actionReason || actionReason };
       if (bulkAction === 'adjust-coins') {
-        actionData.coinAdjustment = parseInt(coinAdjustment);
+        actionData.coinAdjustment = parseInt(values.coinAdjustment || coinAdjustment);
       }
 
       const response = await userApi.bulkUserAction(
         bulkAction,
-        Array.isArray(selectedUsers) ? selectedUsers.map(id => String(id)) : [],
+        selectedRowKeys.map(id => String(id)),
         actionData
       );
 
       if (response.success) {
-        setBulkActionDialog(false);
-        setSelectedUsers([] as GridRowSelectionModel);
+        message.success('Bulk action completed successfully');
+        setBulkActionModal(false);
+        setSelectedRowKeys([]);
         setBulkAction('');
         setCoinAdjustment('');
         setActionReason('');
-        loadUsers(); // Reload data
+        form.resetFields();
+        loadUsers();
       } else {
-        setError('Failed to perform bulk action');
+        message.error('Failed to perform bulk action');
       }
     } catch (err) {
-      setError('An error occurred during bulk action');
+      message.error('An error occurred during bulk action');
       console.error('Bulk action error:', err);
     }
   };
 
-  const columns: GridColDef[] = [
+  const columns = [
     {
-      field: 'name',
-      headerName: 'Name',
+      title: 'Name',
+      dataIndex: 'name',
+      key: 'name',
       width: 150,
-      renderCell: (params) => (
-        <Box>
-          <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-            {params.row.name}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {params.row.email}
-          </Typography>
-        </Box>
+      render: (text: string, record: User) => (
+        <div>
+          <div style={{ fontWeight: 'bold' }}>{text}</div>
+          <div style={{ fontSize: '12px', color: '#666' }}>{record.email}</div>
+        </div>
       ),
     },
     {
-      field: 'country',
-      headerName: 'Country',
+      title: 'Country',
+      dataIndex: 'country',
+      key: 'country',
       width: 100,
-      renderCell: (params) => (
-        <Chip label={params.value} size="small" variant="outlined" />
-      ),
+      render: (country: string) => <Tag>{country}</Tag>,
     },
     {
-      field: 'coins',
-      headerName: 'Coins',
+      title: 'Coins',
+      dataIndex: 'coins',
+      key: 'coins',
       width: 120,
-      type: 'number',
-      renderCell: (params) => (
-        <Box sx={{ textAlign: 'right' }}>
-          <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-            {params.value.toLocaleString()}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            ${(params.value * 0.001).toFixed(2)}
-          </Typography>
-        </Box>
+      render: (value: number) => (
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontWeight: 'bold' }}>{value.toLocaleString()}</div>
+          <div style={{ fontSize: '12px', color: '#666' }}>
+            ${(value * 0.001).toFixed(2)}
+          </div>
+        </div>
       ),
     },
     {
-      field: 'totalCoinsEarned',
-      headerName: 'Total Earned',
+      title: 'Total Earned',
+      dataIndex: 'totalCoinsEarned',
+      key: 'totalCoinsEarned',
       width: 130,
-      type: 'number',
-      renderCell: (params) => (
-        <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-          {params.value.toLocaleString()}
-        </Typography>
-      ),
+      render: (value: number) => <Text strong>{value.toLocaleString()}</Text>,
     },
     {
-      field: 'totalEngagementTime',
-      headerName: 'Play Time',
+      title: 'Play Time',
+      dataIndex: 'totalEngagementTime',
+      key: 'totalEngagementTime',
       width: 120,
-      renderCell: (params) => {
-        const hours = Math.floor(params.value / 3600);
-        const minutes = Math.floor((params.value % 3600) / 60);
-        return (
-          <Typography variant="body2">
-            {hours}h {minutes}m
-          </Typography>
-        );
+      render: (value: number) => {
+        const hours = Math.floor(value / 3600);
+        const minutes = Math.floor((value % 3600) / 60);
+        return `${hours}h ${minutes}m`;
       },
     },
     {
-      field: 'isActive',
-      headerName: 'Status',
+      title: 'Status',
+      dataIndex: 'isActive',
+      key: 'isActive',
       width: 100,
-      renderCell: (params) => (
-        <Chip
-          label={params.value ? 'Active' : 'Inactive'}
-          color={params.value ? 'success' : 'error'}
-          size="small"
-        />
+      render: (isActive: boolean) => (
+        <Tag color={isActive ? 'success' : 'error'}>
+          {isActive ? 'Active' : 'Inactive'}
+        </Tag>
       ),
     },
     {
-      field: 'registrationDate',
-      headerName: 'Joined',
+      title: 'Joined',
+      dataIndex: 'registrationDate',
+      key: 'registrationDate',
       width: 120,
-      renderCell: (params) => (
-        <Typography variant="body2">
-          {format(new Date(params.value), 'MMM dd, yyyy')}
-        </Typography>
-      ),
+      render: (date: string) => format(new Date(date), 'MMM dd, yyyy'),
     },
     {
-      field: 'lastActiveAt',
-      headerName: 'Last Active',
+      title: 'Last Active',
+      dataIndex: 'lastActiveAt',
+      key: 'lastActiveAt',
       width: 120,
-      renderCell: (params) => (
-        <Typography variant="body2">
-          {format(new Date(params.value), 'MMM dd, yyyy')}
-        </Typography>
-      ),
+      render: (date: string) => format(new Date(date), 'MMM dd, yyyy'),
     },
   ];
 
   return (
-    <Container maxWidth="xl">
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
+    <Content style={{ padding: '24px' }}>
+      <div style={{ marginBottom: '24px' }}>
+        <Title level={2} style={{ marginBottom: '8px' }}>
           User Management
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
+        </Title>
+        <Text type="secondary">
           Manage and monitor all registered users in your game.
-        </Typography>
-      </Box>
+        </Text>
+      </div>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
+        <Alert message={error} type="error" style={{ marginBottom: '16px' }} />
       )}
 
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid size={{ xs: 12, md: 4 }}>
-            <TextField
-              fullWidth
+      <Card style={{ marginBottom: '16px' }}>
+        <Row gutter={16} align="middle">
+          <Col xs={24} md={6}>
+            <Input
               placeholder="Search users..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              InputProps={{
-                startAdornment: <SearchIcon sx={{ color: 'text.secondary', mr: 1 }} />,
-              }}
+              prefix={<SearchOutlined />}
             />
-          </Grid>
-          <Grid size={{ xs: 12, md: 2 }}>
-            <FormControl fullWidth>
-              <InputLabel>Country</InputLabel>
-              <Select
-                value={countryFilter}
-                label="Country"
-                onChange={(e) => setCountryFilter(e.target.value)}
-              >
-                <MenuItem value="">All Countries</MenuItem>
-                <MenuItem value="US">United States</MenuItem>
-                <MenuItem value="CA">Canada</MenuItem>
-                <MenuItem value="GB">United Kingdom</MenuItem>
-                <MenuItem value="DE">Germany</MenuItem>
-                <MenuItem value="FR">France</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid size={{ xs: 12, md: 2 }}>
-            <FormControl fullWidth>
-              <InputLabel>Status</InputLabel>
-              <Select
-                value={statusFilter}
-                label="Status"
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                <MenuItem value="">All Users</MenuItem>
-                <MenuItem value="active">Active</MenuItem>
-                <MenuItem value="inactive">Inactive</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid size={{ xs: 12, md: 4 }}>
-            <Box sx={{ display: 'flex', gap: 1 }}>
+          </Col>
+          <Col xs={24} md={4}>
+            <Select
+              placeholder="Country"
+              value={countryFilter}
+              onChange={setCountryFilter}
+              style={{ width: '100%' }}
+              allowClear
+            >
+              <Option value="">All Countries</Option>
+              <Option value="US">United States</Option>
+              <Option value="CA">Canada</Option>
+              <Option value="GB">United Kingdom</Option>
+              <Option value="DE">Germany</Option>
+              <Option value="FR">France</Option>
+            </Select>
+          </Col>
+          <Col xs={24} md={4}>
+            <Select
+              placeholder="Status"
+              value={statusFilter}
+              onChange={setStatusFilter}
+              style={{ width: '100%' }}
+              allowClear
+            >
+              <Option value="">All Users</Option>
+              <Option value="active">Active</Option>
+              <Option value="inactive">Inactive</Option>
+            </Select>
+          </Col>
+          <Col xs={24} md={10}>
+            <Space>
               <Button
-                variant="outlined"
-                disabled={Array.isArray(selectedUsers) ? selectedUsers.length === 0 : true}
-                onClick={() => setBulkActionDialog(true)}
+                disabled={selectedRowKeys.length === 0}
+                onClick={() => setBulkActionModal(true)}
               >
-                Bulk Actions ({Array.isArray(selectedUsers) ? selectedUsers.length : 0} selected)
+                Bulk Actions ({selectedRowKeys.length} selected)
               </Button>
               <Button
-                variant="contained"
-                startIcon={<PersonAddIcon />}
+                type="primary"
+                icon={<UserAddOutlined />}
                 onClick={() => {/* Handle add user */}}
               >
                 Add User
               </Button>
-            </Box>
-          </Grid>
-        </Grid>
-      </Paper>
+            </Space>
+          </Col>
+        </Row>
+      </Card>
 
-      <Paper sx={{ height: 600 }}>
-        <DataGrid
-          rows={users}
+      <Card>
+        <Table
           columns={columns}
+          dataSource={users}
           loading={loading}
-          paginationMode="server"
-          rowCount={pagination.total}
-          paginationModel={{
-            page: pagination.page,
+          pagination={{
+            current: pagination.current,
             pageSize: pagination.pageSize,
-          }}
-          onPaginationModelChange={(model) => {
-            setPagination(prev => ({
-              ...prev,
-              page: model.page,
-              pageSize: model.pageSize,
-            }));
-          }}
-          pageSizeOptions={[10, 25, 50, 100]}
-          getRowId={(row) => row._id}
-          checkboxSelection
-          rowSelectionModel={selectedUsers}
-          onRowSelectionModelChange={(newSelection) => {
-            setSelectedUsers(newSelection);
-          }}
-          sx={{
-            '& .MuiDataGrid-row:hover': {
-              backgroundColor: 'action.hover',
+            total: pagination.total,
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
+            pageSizeOptions: ['10', '25', '50', '100'],
+            onChange: (page, pageSize) => {
+              setPagination(prev => ({
+                ...prev,
+                current: page,
+                pageSize: pageSize || prev.pageSize,
+              }));
             },
           }}
+          rowKey="_id"
+          rowSelection={{
+            selectedRowKeys,
+            onChange: setSelectedRowKeys,
+          }}
+          scroll={{ x: 1000 }}
         />
-      </Paper>
+      </Card>
 
-      {/* Bulk Action Dialog */}
-      <Dialog open={bulkActionDialog} onClose={() => setBulkActionDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Bulk Actions</DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
-            <FormControl fullWidth>
-              <InputLabel>Action</InputLabel>
-              <Select
-                value={bulkAction}
-                label="Action"
-                onChange={(e) => setBulkAction(e.target.value)}
-              >
-                <MenuItem value="activate">Activate Users</MenuItem>
-                <MenuItem value="deactivate">Deactivate Users</MenuItem>
-                <MenuItem value="adjust-coins">Adjust Coins</MenuItem>
-              </Select>
-            </FormControl>
+      {/* Bulk Action Modal */}
+      <Modal
+        title="Bulk Actions"
+        open={bulkActionModal}
+        onCancel={() => setBulkActionModal(false)}
+        footer={null}
+        width={500}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleBulkAction}
+        >
+          <Form.Item
+            name="action"
+            label="Action"
+            rules={[{ required: true, message: 'Please select an action' }]}
+          >
+            <Select
+              placeholder="Select action"
+              value={bulkAction}
+              onChange={setBulkAction}
+            >
+              <Option value="activate">Activate Users</Option>
+              <Option value="deactivate">Deactivate Users</Option>
+              <Option value="adjust-coins">Adjust Coins</Option>
+            </Select>
+          </Form.Item>
 
-            {bulkAction === 'adjust-coins' && (
-              <TextField
-                fullWidth
-                label="Coin Adjustment"
+          {bulkAction === 'adjust-coins' && (
+            <Form.Item
+              name="coinAdjustment"
+              label="Coin Adjustment"
+              rules={[{ required: true, message: 'Please enter coin adjustment' }]}
+            >
+              <Input
                 type="number"
+                placeholder="Enter coin adjustment"
                 value={coinAdjustment}
                 onChange={(e) => setCoinAdjustment(e.target.value)}
-                helperText="Positive number to add coins, negative to deduct"
               />
-            )}
+            </Form.Item>
+          )}
 
-            <TextField
-              fullWidth
-              label="Reason (Optional)"
-              multiline
+          <Form.Item name="actionReason" label="Reason (Optional)">
+            <Input.TextArea
               rows={3}
+              placeholder="Enter reason for this action..."
               value={actionReason}
               onChange={(e) => setActionReason(e.target.value)}
-              placeholder="Enter reason for this action..."
             />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setBulkActionDialog(false)}>Cancel</Button>
-          <Button
-            onClick={handleBulkAction}
-            variant="contained"
-            disabled={!bulkAction}
-          >
-            Apply Action
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Container>
+          </Form.Item>
+
+          <div style={{ textAlign: 'right', marginTop: '16px' }}>
+            <Space>
+              <Button onClick={() => setBulkActionModal(false)}>
+                Cancel
+              </Button>
+              <Button
+                type="primary"
+                htmlType="submit"
+                disabled={!bulkAction}
+              >
+                Apply Action
+              </Button>
+            </Space>
+          </div>
+        </Form>
+      </Modal>
+    </Content>
   );
 };
 

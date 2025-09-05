@@ -1,52 +1,48 @@
 import React from 'react';
 import {
-  Drawer,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Toolbar,
+  Layout,
+  Menu,
   Typography,
-  Divider,
-  Box,
-} from '@mui/material';
+  Avatar,
+  Space,
+  Button,
+} from 'antd';
 import {
-  Dashboard as DashboardIcon,
-  People as PeopleIcon,
-  AccountBalanceWallet as PayoutIcon,
-  VideoLibrary as AdIcon,
-  Analytics as AnalyticsIcon,
-  Settings as SettingsIcon,
-  ExitToApp as LogoutIcon,
-} from '@mui/icons-material';
+  DashboardOutlined,
+  UserOutlined,
+  WalletOutlined,
+  VideoCameraOutlined,
+  BarChartOutlined,
+  SettingOutlined,
+  LogoutOutlined,
+} from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
-const drawerWidth = 240;
+const { Sider } = Layout;
+const { Title, Text } = Typography;
 
 interface SidebarProps {
-  mobileOpen: boolean;
-  handleDrawerToggle: () => void;
+  collapsed: boolean;
+  onCollapse: () => void;
 }
 
 const menuItems = [
-  { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
-  { text: 'Users', icon: <PeopleIcon />, path: '/users' },
-  { text: 'Payouts', icon: <PayoutIcon />, path: '/payouts' },
-  { text: 'Ad Rewards', icon: <AdIcon />, path: '/ads' },
-  { text: 'Analytics', icon: <AnalyticsIcon />, path: '/analytics' },
-  { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
+  { key: '/', icon: <DashboardOutlined />, label: 'Dashboard' },
+  { key: '/users', icon: <UserOutlined />, label: 'Users' },
+  { key: '/payouts', icon: <WalletOutlined />, label: 'Payouts' },
+  { key: '/ads', icon: <VideoCameraOutlined />, label: 'Ad Rewards' },
+  { key: '/analytics', icon: <BarChartOutlined />, label: 'Analytics' },
+  { key: '/settings', icon: <SettingOutlined />, label: 'Settings' },
 ];
 
-const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, handleDrawerToggle }) => {
+const Sidebar: React.FC<SidebarProps> = ({ collapsed, onCollapse }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { logout, user } = useAuth();
 
-  const handleNavigation = (path: string) => {
-    navigate(path);
-    handleDrawerToggle();
+  const handleMenuClick = ({ key }: { key: string }) => {
+    navigate(key);
   };
 
   const handleLogout = () => {
@@ -54,105 +50,77 @@ const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, handleDrawerToggle }) => 
     navigate('/login');
   };
 
-  const drawer = (
-    <div>
-      <Toolbar>
-        <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 'bold' }}>
-          Drop Strike Admin
-        </Typography>
-      </Toolbar>
-      <Divider />
-      
-      <Box sx={{ p: 2 }}>
-        <Typography variant="body2" color="text.secondary">
-          Welcome back,
-        </Typography>
-        <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-          {user?.name}
-        </Typography>
-      </Box>
-      
-      <Divider />
-      
-      <List>
-        {menuItems.map((item) => (
-          <ListItem key={item.text} disablePadding>
-            <ListItemButton
-              selected={location.pathname === item.path}
-              onClick={() => handleNavigation(item.path)}
-              sx={{
-                '&.Mui-selected': {
-                  backgroundColor: 'primary.light',
-                  '&:hover': {
-                    backgroundColor: 'primary.light',
-                  },
-                  '& .MuiListItemIcon-root': {
-                    color: 'primary.main',
-                  },
-                  '& .MuiListItemText-primary': {
-                    color: 'primary.main',
-                    fontWeight: 'bold',
-                  },
-                },
-              }}
-            >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
-            </ListItemButton>
-          </ListItem>
-        ))}
-      </List>
-      
-      <Box sx={{ flexGrow: 1 }} />
-      
-      <Divider />
-      <List>
-        <ListItem disablePadding>
-          <ListItemButton onClick={handleLogout}>
-            <ListItemIcon>
-              <LogoutIcon />
-            </ListItemIcon>
-            <ListItemText primary="Logout" />
-          </ListItemButton>
-        </ListItem>
-      </List>
-    </div>
-  );
-
   return (
-    <Box
-      component="nav"
-      sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
-      aria-label="navigation menu"
+    <Sider
+      trigger={null}
+      collapsible
+      collapsed={collapsed}
+      style={{
+        background: '#fff',
+        boxShadow: '2px 0 8px rgba(0,0,0,0.15)',
+      }}
     >
-      {/* Mobile drawer */}
-      <Drawer
-        variant="temporary"
-        open={mobileOpen}
-        onClose={handleDrawerToggle}
-        ModalProps={{
-          keepMounted: true, // Better open performance on mobile.
-        }}
-        sx={{
-          display: { xs: 'block', sm: 'none' },
-          '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+      <div
+        style={{
+          padding: '16px',
+          textAlign: 'center',
+          borderBottom: '1px solid #f0f0f0',
         }}
       >
-        {drawer}
-      </Drawer>
-      
-      {/* Desktop drawer */}
-      <Drawer
-        variant="permanent"
-        sx={{
-          display: { xs: 'none', sm: 'block' },
-          '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+        <Title level={4} style={{ margin: 0, color: '#1890ff' }}>
+          {collapsed ? 'DS' : 'Drop Strike Admin'}
+        </Title>
+      </div>
+
+      <div
+        style={{
+          padding: '16px',
+          borderBottom: '1px solid #f0f0f0',
         }}
-        open
       >
-        {drawer}
-      </Drawer>
-    </Box>
+        <Space direction="vertical" size="small" style={{ width: '100%' }}>
+          <Text type="secondary" style={{ fontSize: '12px' }}>
+            Welcome back,
+          </Text>
+          <Text strong style={{ fontSize: '14px' }}>
+            {user?.name || user?.email}
+          </Text>
+        </Space>
+      </div>
+
+      <Menu
+        mode="inline"
+        selectedKeys={[location.pathname]}
+        items={menuItems}
+        onClick={handleMenuClick}
+        style={{
+          border: 'none',
+          background: 'transparent',
+        }}
+      />
+
+      <div
+        style={{
+          position: 'absolute',
+          bottom: '16px',
+          left: '16px',
+          right: '16px',
+        }}
+      >
+        <Button
+          type="text"
+          icon={<LogoutOutlined />}
+          onClick={handleLogout}
+          block
+          style={{
+            textAlign: 'left',
+            height: '40px',
+          }}
+        >
+          {!collapsed && 'Logout'}
+        </Button>
+      </div>
+    </Sider>
   );
 };
 

@@ -1,73 +1,86 @@
 import React from 'react';
 import {
-  AppBar,
-  Toolbar,
+  Layout,
   Typography,
-  IconButton,
-  Box,
-  Chip,
-} from '@mui/material';
+  Button,
+  Space,
+  Tag,
+  Avatar,
+  Dropdown,
+  Menu,
+} from 'antd';
 import {
-  Menu as MenuIcon,
-  Notifications as NotificationsIcon,
-} from '@mui/icons-material';
+  MenuOutlined,
+  BellOutlined,
+  UserOutlined,
+  LogoutOutlined,
+} from '@ant-design/icons';
 import { useAuth } from '../../contexts/AuthContext';
 
-const drawerWidth = 240;
+const { Header: AntHeader } = Layout;
+const { Title, Text } = Typography;
 
 interface HeaderProps {
-  handleDrawerToggle: () => void;
+  onCollapse: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ handleDrawerToggle }) => {
-  const { user } = useAuth();
+const Header: React.FC<HeaderProps> = ({ onCollapse }) => {
+  const { user, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+  };
+
+  const userMenu = (
+    <Menu>
+      <Menu.Item key="profile" icon={<UserOutlined />}>
+        Profile
+      </Menu.Item>
+      <Menu.Divider />
+      <Menu.Item key="logout" icon={<LogoutOutlined />} onClick={handleLogout}>
+        Logout
+      </Menu.Item>
+    </Menu>
+  );
 
   return (
-    <AppBar
-      position="fixed"
-      sx={{
-        width: { sm: `calc(100% - ${drawerWidth}px)` },
-        ml: { sm: `${drawerWidth}px` },
-        backgroundColor: 'background.paper',
-        color: 'text.primary',
+    <AntHeader
+      style={{
+        background: '#fff',
+        padding: '0 24px',
         boxShadow: '0 1px 3px rgba(0,0,0,0.12)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
       }}
     >
-      <Toolbar>
-        <IconButton
-          color="inherit"
-          aria-label="open drawer"
-          edge="start"
-          onClick={handleDrawerToggle}
-          sx={{ mr: 2, display: { sm: 'none' } }}
-        >
-          <MenuIcon />
-        </IconButton>
-        
-        <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
+      <div style={{ display: 'flex', alignItems: 'center' }}>
+        <Button
+          type="text"
+          icon={<MenuOutlined />}
+          onClick={onCollapse}
+          style={{ marginRight: '16px' }}
+        />
+        <Title level={4} style={{ margin: 0 }}>
           Drop Strike Admin Dashboard
-        </Typography>
+        </Title>
+      </div>
+      
+      <Space size="middle">
+        <Tag color="blue" style={{ margin: 0 }}>
+          Admin
+        </Tag>
         
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Chip
-            label="Admin"
-            color="primary"
-            size="small"
-            variant="outlined"
-          />
-          
-          <IconButton color="inherit">
-            <NotificationsIcon />
-          </IconButton>
-          
-          <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 1 }}>
-            <Typography variant="body2" color="text.secondary">
-              {user?.email}
-            </Typography>
-          </Box>
-        </Box>
-      </Toolbar>
-    </AppBar>
+        <Button type="text" icon={<BellOutlined />} />
+        
+        <Dropdown overlay={userMenu} placement="bottomRight">
+          <Space style={{ cursor: 'pointer' }}>
+            <Avatar icon={<UserOutlined />} />
+            <Text>{user?.email}</Text>
+          </Space>
+        </Dropdown>
+      </Space>
+    </AntHeader>
   );
 };
 

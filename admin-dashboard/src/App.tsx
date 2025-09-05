@@ -1,7 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { CssBaseline } from '@mui/material';
+import { ConfigProvider } from 'antd';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Layout from './components/Layout/Layout';
 import Login from './pages/Login';
@@ -12,48 +11,28 @@ import Ads from './pages/Ads';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
 
-// Create theme
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: '#667eea',
-    },
-    secondary: {
-      main: '#764ba2',
-    },
-    background: {
-      default: '#f5f5f5',
-    },
-  },
-  typography: {
+// Ant Design theme configuration
+const theme = {
+  token: {
+    colorPrimary: '#667eea',
+    colorSuccess: '#52c41a',
+    colorWarning: '#faad14',
+    colorError: '#ff4d4f',
+    colorInfo: '#1890ff',
+    borderRadius: 8,
     fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-    h4: {
-      fontWeight: 600,
-    },
-    h6: {
-      fontWeight: 600,
-    },
   },
   components: {
-    MuiCard: {
-      styleOverrides: {
-        root: {
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-          borderRadius: '12px',
-        },
-      },
+    Card: {
+      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+      borderRadius: 12,
     },
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          borderRadius: '8px',
-          textTransform: 'none',
-          fontWeight: 600,
-        },
-      },
+    Button: {
+      borderRadius: 8,
+      fontWeight: 600,
     },
   },
-});
+};
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -82,8 +61,7 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
 function App() {
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
+    <ConfigProvider theme={theme}>
       <AuthProvider>
         <Router>
           <Routes>
@@ -114,7 +92,7 @@ function App() {
           </Routes>
         </Router>
       </AuthProvider>
-    </ThemeProvider>
+    </ConfigProvider>
   );
 }
 
