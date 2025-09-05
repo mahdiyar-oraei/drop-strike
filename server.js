@@ -23,9 +23,7 @@ const app = express();
 // Security middleware
 app.use(helmet());
 app.use(cors({
-    origin: process.env.NODE_ENV === 'production' 
-        ? ['https://your-game-domain.com', 'https://your-admin-panel.com'] 
-        : ['http://localhost:3000', 'http://localhost:3001'],
+    origin: true, // Allow all origins
     credentials: true
 }));
 
