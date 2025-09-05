@@ -18,7 +18,7 @@ import {
   DialogActions,
   Grid,
 } from '@mui/material';
-import { DataGrid, GridColDef, GridRowSelectionModel } from '@mui/x-data-grid';
+import { DataGrid, GridColDef, GridRowSelectionModel, GridRowId } from '@mui/x-data-grid';
 import { Search as SearchIcon, PersonAdd as PersonAddIcon } from '@mui/icons-material';
 import { User } from '../types';
 import { userApi } from '../services/api';
@@ -31,7 +31,7 @@ const Users: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [countryFilter, setCountryFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [selectedUsers, setSelectedUsers] = useState<GridRowSelectionModel>([] as any);
+  // const [selectedUsers, setSelectedUsers] = useState<GridRowSelectionModel>([]);
   const [bulkActionDialog, setBulkActionDialog] = useState(false);
   const [bulkAction, setBulkAction] = useState('');
   const [coinAdjustment, setCoinAdjustment] = useState('');
@@ -77,6 +77,9 @@ const Users: React.FC = () => {
   };
 
   const handleBulkAction = async () => {
+    // Temporarily disabled - selection functionality needs to be fixed
+    return;
+    /*
     if (!bulkAction || (Array.isArray(selectedUsers) && selectedUsers.length === 0)) return;
 
     try {
@@ -93,7 +96,7 @@ const Users: React.FC = () => {
 
       if (response.success) {
         setBulkActionDialog(false);
-        setSelectedUsers([] as any);
+        setSelectedUsers([]);
         setBulkAction('');
         setCoinAdjustment('');
         setActionReason('');
@@ -105,6 +108,7 @@ const Users: React.FC = () => {
       setError('An error occurred during bulk action');
       console.error('Bulk action error:', err);
     }
+    */
   };
 
   const columns: GridColDef[] = [
@@ -271,10 +275,10 @@ const Users: React.FC = () => {
             <Box sx={{ display: 'flex', gap: 1 }}>
               <Button
                 variant="outlined"
-                disabled={Array.isArray(selectedUsers) && selectedUsers.length === 0}
+                disabled={true}
                 onClick={() => setBulkActionDialog(true)}
               >
-                Bulk Actions ({Array.isArray(selectedUsers) ? selectedUsers.length : 0})
+                Bulk Actions (Selection Disabled)
               </Button>
               <Button
                 variant="contained"
@@ -293,10 +297,6 @@ const Users: React.FC = () => {
           rows={users}
           columns={columns}
           loading={loading}
-          checkboxSelection
-          disableRowSelectionOnClick
-          rowSelectionModel={selectedUsers}
-          onRowSelectionModelChange={setSelectedUsers}
           paginationMode="server"
           rowCount={pagination.total}
           paginationModel={{
