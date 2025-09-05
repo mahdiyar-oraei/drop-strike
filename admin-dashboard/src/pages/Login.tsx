@@ -17,23 +17,20 @@ const { Content } = Layout;
 const { Title, Text } = Typography;
 
 const Login: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const { login, loading } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (values: { email: string; password: string }) => {
     setError('');
 
-    if (!email || !password) {
+    if (!values.email || !values.password) {
       setError('Please fill in all fields');
       return;
     }
 
     try {
-      const success = await login(email, password);
+      const success = await login(values.email, values.password);
       if (success) {
         navigate('/');
       } else {
@@ -109,8 +106,6 @@ const Login: React.FC = () => {
               >
                 <Input
                   type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
                   disabled={loading}
                   size="large"
                 />
@@ -122,8 +117,6 @@ const Login: React.FC = () => {
                 rules={[{ required: true, message: 'Please input your password!' }]}
               >
                 <Input.Password
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
                   disabled={loading}
                   size="large"
                 />
